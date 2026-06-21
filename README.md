@@ -8,6 +8,14 @@ Managing enteral feeding for inpatients with diabetes, strictly adhering to Univ
 </div>
 
 ## Contents
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Demo](#demo)
+- [How to use](#how-to-use)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Contributions](#contributions)
+- [Acknowledgements](#acknowledgments)
 
 
 ## Features

@@ -1,0 +1,29 @@
+version: uhl-jbds-v1
+# Active windows for the feed-stop / insulin-on-board guard.
+# Basal is excluded - it is never feed-related and never omitted.
+profiles:
+  rapid_analogue:
+    label: Rapid-acting analogue
+    active_window_hours: 4
+    provenance: "JBDS 05 §6, Appendix 2; UHL B6/2020 §2.9"
+  soluble:
+    label: Soluble / quick-acting
+    active_window_hours: 6
+    provenance: "JBDS 05 §6, Appendix 2; UHL B6/2020 §2.9"
+  isophane:
+    label: Isophane (NPH)
+    active_window_hours: 12
+    provenance: "JBDS 05 §6.1"
+  premixed:
+    label: Pre-mixed biphasic (30/70)
+    active_window_hours: 12
+    provenance: "JBDS 05 §6, Table 1; UHL B6/2020 Appendix A"
+  premixed:
+    label: Pre-mixed biphasic (30/70)
+    active_window_hours: 12
+    provenance: "JBDS 05 §6, Table 1"
+  long_acting:
+    label: Long-acting basal analogue
+    feed_related: false
+    note: "Basal - continues regardless of feed; never omit in T1. Excluded from feed-stop hypo guard."
+    provenance: "JBDS 05 §6; UHL B6/2020 Appendix B"

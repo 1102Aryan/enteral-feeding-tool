@@ -1,0 +1,39 @@
+version: uhl-jbds-v1
+# Glucose bands per UHL Figure 1 / JBDS 05 §8.1.
+# Ordered ascending; `upper` is the band's top bound. `above` is the fallback.
+bands:
+  - key: hypo
+    label: Hypoglycaemia
+    range: "< 4"
+    upper: 4
+    inclusive: false
+    action: >
+      Treat hypoglycaemia immediately: 15-20 g rapid-acting carbohydrate via the
+      feeding tube (Lift preferred), then flush. Recheck CBG every 15 minutes,
+      repeat up to 3 times. Do not omit basal insulin. Review the insulin regimen.
+    provenance: "UHL B6/2020 §2.9.2, Table 3; JBDS 05 §12"
+  - key: looming
+    label: Looming hypoglycaemia
+    range: "4-6"
+    upper: 6
+    inclusive: false
+    action: "Consider reducing insulin and increase monitoring frequency."
+    provenance: "UHL B6/2020 Figure 1"
+  - key: target
+    label: In target
+    range: "6-12"
+    upper: 12
+    inclusive: true
+    action: >
+      In target range. Continue the current regimen; review at 36-48 h. Seek early
+      review if the feed regimen is altered.
+    provenance: "JBDS 05 §8.1; UHL B6/2020 §2.8"
+  - key: above
+    label: Above target
+    range: "> 12"
+    action: >
+      Above target. Test ketones now. If no ketones, consider PRN rapid-acting
+      correction and titrate the prior feed insulin by 2-4 units or 10-20%.
+      Caution within 4 h of a feed break. If persistently >12 on two consecutive
+      readings, inform the DIT.
+    provenance: "UHL B6/2020 §2.9.3, Figure 1; JBDS 05 §11"

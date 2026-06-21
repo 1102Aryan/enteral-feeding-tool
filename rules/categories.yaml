@@ -1,0 +1,25 @@
+version: uhl-jbds-v1
+# Initial-management branch from UHL Figure 1 ("Basics").
+categories:
+  type1:
+    label: Type 1 / insulin deficiency
+    note: >
+      Continue long-acting basal analogue - never omit (DKA risk). Involve the DIT
+      early. If on an insulin pump (CSII), stop it and use basal insulin + VRIII
+      unless the DIT agrees the pump may continue.
+    provenance: "UHL B6/2020 Figure 1, §2.2; JBDS 05 §2.3, §6"
+  type2_well:
+    label: Type 2, well-controlled
+    note: >
+      Continue metformin as a liquid via the tube if already prescribed; consider
+      liquid metformin if CBG is persistently >12. PRN rapid-acting insulin may
+      correct CBG >12. Review every 24 h and consider adding feed-timed SC insulin
+      if PRN is insufficient.
+    provenance: "UHL B6/2020 Figure 1, §2.5, §5; JBDS 05 §4-5"
+  type2_suboptimal:
+    label: Type 2, suboptimal control
+    note: >
+      Continue or consider starting liquid metformin. Commence subcutaneous insulin
+      timed to the feed early, and match the feed's glycaemic profile to the insulin
+      profile (adjust both). Consider VRIII if out of hours or DIT unavailable.
+    provenance: "UHL B6/2020 Figure 1, §4, §6"
