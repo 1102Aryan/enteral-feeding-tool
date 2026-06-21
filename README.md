@@ -6,3 +6,30 @@ Managing enteral feeding for inpatients with diabetes, strictly adhering to Univ
 ## PROTOTYPE - NOT FOR CLINICAL USE
 
 </div>
+
+## Contents
+
+
+## Features
+
+
+## Screenshots
+
+
+## Demo
+
+
+## How to use
+
+
+## Tech Stack
+
+
+## Project Structure
+
+
+## Contributions
+
+
+## Acknowledgments
+

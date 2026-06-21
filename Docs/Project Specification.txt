@@ -1,0 +1,68 @@
+Project Specification
+Enteral Feeding - for in-patient with diabetes based on trust protocol - University of hospital of leicester and JBDS guidelines
+
+- guidance on adjusting the insuline doses according to the CBG and alert the team when the feed has stopped to montior the blood sugars and treat hyperglycema. 
+- Alert the team when the blood sugars is more than 12 ~ to check for ketones and optimise the treatment
+- safety net to alert health care professional to follow the guidelines 
+
+hypo symptoms - so they can't feel these symptoms like shivering
+ketone - body switch to anabolic to catabolic phase (synthetic to breaking down phase)
+reason target glucose range was achieved in only 40% of entreral feed cases
+guidelines only ecist in PDFs and paper charts
+no specific enteral-feed-specific - 1. feed interruption
+				    2. rising glucose with ketone risk
+
+a) Ward staff with an advisory tool that runs and uses UHL/JBDS enteral-feeding insulin protocol into clear, situation-awar guidance
+b) actively alerts the team to the two highest risk envents - feed stopped, glucose threshold not being met
+
+
+
+algorithm for the management of glycoma during tneteral feeding of people with diabetes
+type 1
+only insulin
+long acting insulin
+involve diabetest team earlist
+choose appropriate insulin regime
+on pump stop it and use basal insulin + variable rate insuline infusion
+
+Type 2 6-12 CBG
+if on medphomin continue in liquid
+if not cosnider adding medphomin liquid if cbg (capilary blood glucose) more than 12
+use short acting insulin prn
+stop all other oral diabetes emedication
+
+Type 2 12> CBG
+continue medphomin liquid
+commence subquentaneious insulin based on feed
+
+measure glucose every 4-6 hours
+
+if on varriable rate measure hourly cbg
+
+Frontend
+Option A (recommended): React + Vite as a PWA. You already know this stack well; PWA gives offline ward use; component model suits the bedside workflow. Add a UI kit (e.g. shadcn/Tailwind) for fast, accessible components.
+Backend / rules engine
+Option A (recommended): Python + FastAPI. Your strongest language; great for a clean, testable, declarative rules engine and for any ML. Pydantic models map nicely to clinical rule definitions.
+Data
+Prototype: SQLite/Postgres + local-first store on the client.
+Alerting
+In-app + push notifications (PWA) for the prototype; pluggable adapter so it can later route to hospital paging/EPMA.
+ML
+Lightweight glucose-trend prediction (even a simple slope/Kalman filter before any deep model). 
+Hosting / infra
+Prototype: any standard cloud or local.
+
+Insulin-on-board–aware feed-stop guard. Most tools react to a low reading after it happens. Modelling active insulin against feed state lets the tool warn before the hypo, the moment the feed stops. This is the headline feature and maps directly to the "IV dextrose for active insulin time" guidance.
+
+Built-in audit/research dashboard. The literature literally asks for a national ETF audit tool. Bake time-in-range, hypo/hyper, and adherence reporting in from the start — that's a publishable angle and a selling point to a trust.
+
+Feed-pattern-aware insulin matching. Treat continuous vs bolus vs overnight feeding as distinct scenarios with distinct logic — including the nasty overnight-feed-then-fasting-day transition that catches teams out.
+
+Smart escalation ladder. Unacknowledged high-risk alerts climb the hierarchy with timeouts, so "alert the team" actually reaches someone, with a full who-saw-what trail.
+
+Predictive (advisory) trend alerts. Use CBG slope to pre-empt the next out-of-range reading. Start with simple maths, not deep learning.
+
+Proactive daily titration suggestions. Mirror how a DISN up-titrates: surface a once-a-day "yesterday ran high, consider +X" prompt — the exact behaviour the audit said was missing.
+
+
+
