@@ -1,0 +1,27 @@
+version: uhl-jbds-v1
+# Ketone branch points per JBDS 05 §9 / §11 and UHL §2.3.
+thresholds:
+  elevated_above: 0.6      # blood ketone > 0.6 mmol/L = elevated (JBDS §9)
+  dka_blood_above: 3.0     # ketonaemia > 3 mmol/L -> FRIII / DKA
+  dka_urine_plus_above: 2  # ketonuria > 2+ -> FRIII / DKA
+levels:
+  none:
+    label: Ketones not elevated
+    action: >
+      Ketones not elevated. Manage hyperglycaemia: consider PRN rapid-acting
+      correction and titrate the prior feed insulin by 2-4 units or 10-20%.
+      Continue monitoring per protocol.
+    provenance: "JBDS 05 §11; UHL B6/2020 §2.9.3"
+  elevated:
+    label: Ketones elevated
+    action: >
+      Ketones elevated (>0.6 mmol/L). Review by the medical team and refer to the
+      DIT. Continue hyperglycaemia management and increase monitoring frequency.
+    provenance: "JBDS 05 §9, §11"
+  dka_risk:
+    label: DKA risk
+    action: >
+      Ketonaemia >3 mmol/L or ketonuria >2+. Consider a fixed-rate IV insulin
+      infusion (FRIII) to suppress ketones and refer URGENTLY to the DIT or
+      on-call medical team. Investigate for DKA (JBDS 02 pathway).
+    provenance: "JBDS 05 §9; UHL B6/2020 §2.3; JBDS 02 (DKA)"

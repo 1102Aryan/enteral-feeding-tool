@@ -65,3 +65,22 @@ class FeedStopResponse(BaseModel):
     provenance: str
     protocol_version: str
 
+class KetoneRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    ketone_mmol: float = Field(..., alias="ketoneMmol")
+    ketonuria_plus: Optional[int] = Field(None, alias="ketonuriaPlus")
+    cbg: Optional[float] = None
+    diabetes_type: str = Field("type2", alias="diabetesType")
+
+
+class KetoneResponse(BaseModel):
+    level: str
+    label: str
+    ketones_elevated: bool
+    escalate: bool
+    dka_pathway: bool
+    action: str
+    provenance: str
+    protocol_version: str
+

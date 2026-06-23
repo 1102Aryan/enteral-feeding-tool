@@ -1,0 +1,19 @@
+name: "JBDS 05 Case Study 2 - feed blocked, feed insulin given anyway -> hypo"
+source: "JBDS 05 (April 2024) Case Study 2 (Elfyn)"
+kind: feed_stop
+# The failure: NGT blocked 2h into an 18h feed; premixed feed insulin was given
+# anyway ("patients must not miss insulin doses") -> CBG 1.9. The guard must
+# withhold the due feed dose and flag active insulin + high hypo risk.
+input:
+  diabetes_type: type2
+  feed_dose_due_now: true
+  minutes_feed_off: 120
+  hypo_signs: false
+  nil_by_mouth: false
+  last_insulin_type: premixed
+  last_insulin_units: 24
+  minutes_since_last_dose: 30
+expect:
+  withhold_due_dose: true
+  active_insulin: true
+  severity: high

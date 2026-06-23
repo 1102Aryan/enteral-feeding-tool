@@ -1,0 +1,12 @@
+name: "Above target with high blood ketones -> DKA pathway"
+source: "JBDS 05 §9, §11; UHL B6/2020 §2.3"
+kind: ketones
+# CBG above target and blood ketones >3 -> must escalate (FRIII / DKA pathway),
+# the trajectory JBDS Case Study 1 ended in.
+input:
+  ketone_mmol: 3.5
+  diabetes_type: type1
+expect:
+  level: dka_risk
+  escalate: true
+  dka_pathway: true

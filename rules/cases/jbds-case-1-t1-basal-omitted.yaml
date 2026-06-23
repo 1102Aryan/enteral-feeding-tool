@@ -1,0 +1,13 @@
+name: "JBDS 05 Case Study 1 - Type 1, basal omitted, progressed to DKA"
+source: "JBDS 05 (April 2024) Case Study 1 (Zeenat)"
+kind: evaluate
+# The failure: basal insulin omitted in a T1 patient, feed disrupted, no
+# monitoring -> CBG 27, ketones, DKA. Our guidance must always carry the
+# never-omit-basal message and flag a ketone check at high glucose.
+input:
+  cbg: 27.0
+  diabetes_type: type1
+expect:
+  band: above
+  check_ketones: true
+  category_contains: "never omit"

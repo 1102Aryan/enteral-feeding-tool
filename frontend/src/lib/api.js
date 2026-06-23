@@ -16,7 +16,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  logGlucose: (payload) =>
-    request("/glucose", { method: "POST", body: JSON.stringify(payload) }),
-  getAlerts: () => request("/alerts"),
+  feedStop: (payload) =>
+    request("/feed/stop", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    assessKetones: (payload) => 
+      request("/ketones/assess", { method: "POST", body: JSON.stringify(payload) }),
+    getDashboard: () => request("/dashboard"),
+    getAudit: (limit = 50) => request(`/audit?limit=${limit}`),
 };

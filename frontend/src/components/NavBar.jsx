@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Activity, User, Soup, Syringe, Bell, BarChart3 } from "lucide-react";
+import { Activity, User, Soup, Syringe, Bell, BarChart3, Brush } from "lucide-react";
 
 const links = [
   { to: "/bedside", label: "Bedside", icon: Activity },
@@ -8,6 +8,7 @@ const links = [
   { to: "/insulin", label: "Insulin", icon: Syringe },
   { to: "/alerts", label: "Alerts", icon: Bell },
   { to: "/audit", label: "Audit", icon: BarChart3 },
+  { to: "/ketones", label: "Ketone", icon: Brush},
 ];
 
 export default function NavBar() {

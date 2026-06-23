@@ -43,7 +43,7 @@ def assess_feed_stop(
 
     # Monitoring frequency
     if hypo_signs:
-        actions.append("Chdeck CBG every 15 minutes (sings of hypoglycaemia present).")
+        actions.append("Chdeck CBG every 15 minutes (signs of hypoglycaemia present).")
     else:
         actions.append("Check CBG hourly while the feed is stopped.")
 

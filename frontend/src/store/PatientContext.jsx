@@ -11,17 +11,48 @@ export function PatientProvider({ children }) {
     onMetformin: true,
     feedType: "continuous",
     insulinType: "rapid_analogue",
-    feedRunning: true,
   });
   const [readings, setReadings] = useState([]); // { cbg, ts }
+  const [feedState, setFeedState] = useState("running"); // "running" | "stopped"
+  const [feedStoppedAt, setFeedStoppedAt] = useState(null); // ISO | null
+  const [lastInsulinDose, setLastInsulinDose] = useState(null); // { type, units, time }
 
   function addReading(cbg) {
     setReadings((r) => [{ cbg, ts: new Date().toISOString() }, ...r]);
   }
 
+  function stopFeed() {
+    setFeedState("stopped");
+    setFeedStoppedAt(new Date().toISOString());
+  }
+
+  function restartFeed() {
+    setFeedState("running");
+    setFeedStoppedAt(null);
+  }
+
+  function recordInsulinDose(type, units) {
+    setLastInsulinDose({
+      type,
+      units: parseFloat(units),
+      time: new Date().toISOString(),
+    });
+  }
+
   return (
     <PatientContext.Provider
-      value={{ patient, setPatient, readings, addReading }}
+      value={{
+        patient,
+        setPatient,
+        readings,
+        addReading,
+        feedState,
+        feedStoppedAt,
+        stopFeed,
+        restartFeed,
+        lastInsulinDose,
+        recordInsulinDose,
+      }}
     >
       {children}
     </PatientContext.Provider>
