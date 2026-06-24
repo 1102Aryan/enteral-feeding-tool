@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,10 +19,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Vite proxy, forwards /api in dev
+# Allowed browser origins. Set FRONTEND_ORIGINS (comma-separated) in production
+# to the deployed static site URL; localhost stays allowed for dev.
+_default_origins = ["http://localhost:5173"]
+_env_origins = [o.strip() for o in os.getenv("FRONTEND_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_default_origins + _env_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

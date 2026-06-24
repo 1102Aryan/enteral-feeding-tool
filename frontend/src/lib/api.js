@@ -1,7 +1,9 @@
 // Thin client for the FastAPI backend.
 // The backend rules engine is authoritative for all clinical logic.
 
-const BASE = "/api";
+// Set VITE_API_URL to the backend base URL in production; unset uses the dev proxy.
+const API_ROOT = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const BASE = `${API_ROOT}/api`;
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
