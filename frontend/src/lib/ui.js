@@ -33,6 +33,13 @@ export function eventMeta(e) {
   }
 }
 
+// Local clock time, e.g. "14:32". A timestamp with no timezone is treated as
+// UTC (the backend stores UTC) so it is not misread as local.
 export function timeAgo(iso) {
-  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (!iso) return "";
+  const hasTz = /([zZ])|([+-]\d{2}:?\d{2})$/.test(iso);
+  const d = new Date(hasTz ? iso : `${iso}Z`);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

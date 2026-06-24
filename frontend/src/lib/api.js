@@ -36,12 +36,19 @@ export const api = {
   // Monitoring (scoped by patientRef)
   getDashboard: (patientRef = "demo") =>
     request(`/dashboard?patientRef=${patientRef}`),
+  getWardOverview: () => request("/ward-overview"),
   getAudit: (limit = 50, patientRef = "demo") =>
     request(`/audit?limit=${limit}&patientRef=${patientRef}`),
   getAlerts: (nowIso, patientRef = "demo") =>
     request(
       `/alerts?patientRef=${patientRef}${nowIso ? `&now=${encodeURIComponent(nowIso)}` : ""}`
     ),
+  // Active alerts across all patients — top-bar dropdown.
+  getAllAlerts: () => request("/alerts/all"),
   ackAlert: (id, by) =>
     request(`/alerts/${id}/ack`, { method: "POST", body: JSON.stringify({ by }) }),
+
+  // Feedback (sidebar overlay)
+  submitFeedback: (payload) =>
+    request("/feedback", { method: "POST", body: JSON.stringify(payload) }),
 };

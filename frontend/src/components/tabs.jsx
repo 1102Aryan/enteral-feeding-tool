@@ -3,10 +3,13 @@ import { usePatient } from "../store/PatientContext.jsx";
 import { eventMeta, timeAgo } from "../lib/ui.js";
 import EventsTimeline from "./EventsTimeline.jsx";
 import FeedStopAlert from "./FeedStopAlert.jsx";
+import RefreshButton from "./RefreshButton.jsx";
 import {
   Soup, Syringe, ShieldCheck, AlertOctagon, ShieldAlert, Info,
-  FlaskConical, ChevronUp, RefreshCw,
+  FlaskConical, ChevronUp, Activity,
 } from "lucide-react";
+
+
 
 const INSULIN_TYPES = [
   ["rapid_analogue", "Rapid-acting analogue (4h)"],
@@ -19,6 +22,126 @@ function Card({ children, className = "" }) {
   return <div className={`bg-white rounded-xl border border-neutral-200 p-5 ${className}`}>{children}</div>;
 }
 
+const bandClass = {
+  hypo: "border-band-hypo bg-band-hypo/5 text-band-hypo",
+  looming: "border-band-looming bg-band-looming/5 text-band-looming",
+  target: "border-band-target bg-band-target/5 text-band-target",
+  above: "border-band-above bg-band-above/5 text-band-above",
+};
+
+const ketLevelClass = {
+  none: "border-band-target bg-band-target/5 text-band-target",
+  elevated: "border-band-looming bg-band-looming/5 text-band-looming",
+  dka_risk: "border-band-hypo bg-band-hypo/5 text-band-hypo",
+};
+
+
+// The core bedside action: log a CBG -> band + recommendation + provenance,
+// with the ketone check surfaced inline when the reading is above 12.
+function CbgEntry() {
+  const { logCbg, assessKetone } = usePatient();
+  const [cbg, setCbg] = useState("");
+  const [res, setRes] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [lastCbg, setLastCbg] = useState(null);
+  const [ketone, setKetone] = useState("");
+  const [ket, setKet] = useState(null);
+ 
+  async function submit() {
+    const v = parseFloat(cbg);
+    if (Number.isNaN(v)) return;
+    setBusy(true);
+    setKet(null);
+    setKetone("");
+    try {
+      const r = await logCbg(v);
+      setRes(r);
+      setLastCbg(v);
+    } finally {
+      setBusy(false);
+      setCbg("");
+    }
+  }
+ 
+  async function runKetone() {
+    setKet(await assessKetone(ketone, lastCbg));
+  }
+
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3 text-ink font-semibold">
+        <Activity size={17} /> Log capillary glucose
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="number" step="0.1" inputMode="decimal" value={cbg}
+          onChange={(e) => setCbg(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="CBG mmol/L (e.g. 13.4)"
+          className="flex-1 text-lg px-3 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-amber-300"
+        />
+        <button
+          onClick={submit} disabled={busy || cbg === ""}
+          className="px-6 rounded-lg bg-primary text-white font-semibold disabled:opacity-40"
+        >
+          Log glucose
+        </button>
+      </div>
+ 
+      {res && (
+        <div className={`mt-3 rounded-lg border p-3 ${bandClass[res.band.key] ?? ""}`}>
+          <div className="flex items-baseline justify-between">
+            <span className="font-semibold">{res.band.label}</span>
+            <span className="text-sm opacity-70">{res.band.range} mmol/L</span>
+          </div>
+          <p className="mt-2 text-sm text-neutral-700">{res.recommendation}</p>
+          <p className="mt-1 text-sm text-neutral-600">{res.category_guidance}</p>
+          <p className="mt-2 text-xs text-neutral-400">Rule: {res.provenance}</p>
+        </div>
+      )}
+ 
+      {res?.check_ketones && (
+        <div className="mt-3 rounded-lg border border-band-above/40 bg-band-above/5 p-3 space-y-2">
+          <div className="flex items-center gap-2 text-band-above font-semibold text-sm">
+            <FlaskConical size={16} /> Glucose above 12 — check ketones
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="number" step="0.1" value={ketone}
+              onChange={(e) => setKetone(e.target.value)}
+              placeholder="Blood ketone mmol/L"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-neutral-200"
+            />
+            <button
+              onClick={runKetone} disabled={ketone === ""}
+              className="px-4 rounded-lg bg-band-above text-white text-sm font-semibold disabled:opacity-40"
+            >
+              Assess
+            </button>
+          </div>
+          {ket && (
+            <div className={`rounded-lg border p-3 ${ketLevelClass[ket.level] ?? ""}`}>
+              <div className="flex items-center gap-2 font-semibold">
+                {ket.escalate && <AlertOctagon size={16} />} {ket.label}
+              </div>
+              {ket.escalate && (
+                <div className="mt-2 rounded bg-band-hypo text-white text-sm font-semibold px-3 py-1.5">
+                  Escalate urgently — DKA pathway.
+                </div>
+              )}
+              <p className="mt-2 text-sm text-neutral-700">{ket.action}</p>
+              <p className="mt-2 text-xs text-neutral-400">Rule: {ket.provenance}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+ 
+
 // ---------- Overview ----------
 export function OverviewTab() {
   const { activePatient, dashboard, lastDose, auditEvents } = usePatient();
@@ -26,6 +149,8 @@ export function OverviewTab() {
 
   return (
     <div className="space-y-4">
+      <CbgEntry />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <FeedStatusCard />
         <InsulinCard />
@@ -269,7 +394,7 @@ export function AuditTab() {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <span className="font-semibold text-ink">Audit log</span>
-          <button onClick={() => refresh()} className="flex items-center gap-1.5 text-sm text-neutral-500"><RefreshCw size={14} /> Refresh</button>
+          <RefreshButton onRefresh={refresh} className="text-neutral-500" />
         </div>
         {(!auditEvents || auditEvents.length === 0) ? (
           <p className="text-sm text-neutral-400">No audit events recorded for this patient yet.</p>

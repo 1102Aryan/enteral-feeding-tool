@@ -59,6 +59,7 @@ class Patient(SQLModel, table=True):
     on_metformin: bool = True
     feed_type: str = "continuous"
     insulin_type: str = "rapid_analogue"
+    feed_status: str = "feeding"  # feeding | feed_stopped | not_feeding
     weight_kg: Optional[float] = None
     hba1c: Optional[float] = None
     created_at: datetime = Field(default_factory=_now)
@@ -69,3 +70,11 @@ class InsulinDose(SQLModel, table=True):
     insulin_type: str
     units: float
     patient_ref: str = "demo"
+
+class Feedback(SQLModel, table=True):
+    """User feedback submitted from the sidebar overlay."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    ts: datetime = Field(default_factory=_now)
+    message: str
+    submitted_by: Optional[str] = None
+    patient_ref: Optional[str] = None

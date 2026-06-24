@@ -4,6 +4,7 @@ import TopBar from "./components/TopBar.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import PatientList from "./components/PatientList.jsx";
 import PatientDetail from "./components/PatientDetail.jsx";
+import WardDashboard from "./components/WardDashboard.jsx";
 import { AlertsTab, AuditTab } from "./components/tabs.jsx";
 import { Settings as SettingsIcon } from "lucide-react";
 
@@ -76,10 +77,12 @@ function SettingsPanel() {
 }
 
 // Which views show the middle patient list (the rest go full width).
-const WITH_LIST = new Set(["dashboard", "patients", "alerts", "audit"]);
+const WITH_LIST = new Set(["patients", "alerts", "audit"]);
 
-function MainView({ view }) {
+function MainView({ view, onNavigate }) {
   switch (view) {
+    case "dashboard":
+      return <WardDashboard onNavigate={onNavigate} />;
     case "alerts":
       return <SectionPanel title="Alerts" subtitle="High-risk events escalate until acknowledged"><AlertsTab /></SectionPanel>;
     case "audit":
@@ -88,7 +91,7 @@ function MainView({ view }) {
       return <SectionPanel title="Analytics" subtitle="Aggregate glycaemic metrics"><AuditTab /></SectionPanel>;
     case "settings":
       return <SettingsPanel />;
-    default: // dashboard / patients
+    default: // patients
       return <PatientDetail />;
   }
 }
@@ -101,7 +104,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-canvas">
-      <TopBar />
+      <TopBar onNavigate={setView} />
       {!connected && (
         <div className="bg-band-hypo text-white text-sm text-center py-1.5">
           Backend not connected — start the API (uvicorn) to load data.
@@ -115,7 +118,7 @@ export default function App() {
           onToggleCollapse={() => setCollapsed((c) => !c)}
         />
         {WITH_LIST.has(view) && <PatientList onAdd={() => setAdding(true)} />}
-        <MainView view={view} />
+        <MainView view={view} onNavigate={setView} />
       </div>
       <footer className="text-center text-xs text-neutral-400 py-2 border-t border-neutral-200 bg-white">
         Research prototype — not for clinical use. All recommendations are advisory and must be confirmed by a clinician.

@@ -97,6 +97,8 @@ class AlertOut(BaseModel):
     current_role: str
     acknowledged_by: Optional[str] = None
     acknowledged_at: Optional[str] = None
+    patient_ref: str
+    patient_name: Optional[str] = None
 
 
 class AckRequest(BaseModel):
@@ -124,5 +126,26 @@ class PatientOut(BaseModel):
     onMetformin: bool
     feedType: str
     insulinType: str
+    feedStatus: str = "feeding"
     weightKg: Optional[float] = None
     hba1c: Optional[float] = None
+
+
+class FeedStatusUpdate(BaseModel):
+    status: str  # feeding | feed_stopped | not_feeding
+
+
+class FeedbackCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    message: str
+    submitted_by: Optional[str] = Field(None, alias="submittedBy")
+    patient_ref: Optional[str] = Field(None, alias="patientRef")
+
+
+class FeedbackOut(BaseModel):
+    id: int
+    ts: str
+    message: str
+    submitted_by: Optional[str] = None
+    patient_ref: Optional[str] = None

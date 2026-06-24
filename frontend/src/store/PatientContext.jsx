@@ -8,13 +8,33 @@ export function PatientProvider({ children }) {
   const [activeRef, setActiveRef] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const [globalAlerts, setGlobalAlerts] = useState([]);
+  const [wardOverview, setWardOverview] = useState(null);
   const [auditEvents, setAuditEvents] = useState([]);
   const [lastDose, setLastDose] = useState(null);
   const [connected, setConnected] = useState(true);
 
   const activePatient = patients.find((p) => p.ref === activeRef) || null;
 
+  const loadGlobalAlerts = useCallback(async () => {
+    try {
+      setGlobalAlerts(await api.getAllAlerts());
+    } catch {
+      /* leave previous value on a transient failure */
+    }
+  }, []);
+
+  const loadWardOverview = useCallback(async () => {
+    try {
+      setWardOverview(await api.getWardOverview());
+    } catch {
+      /* leave previous value on a transient failure */
+    }
+  }, []);
+
   const refresh = useCallback(async (ref = activeRef) => {
+    loadGlobalAlerts();
+    loadWardOverview();
     if (!ref) return;
     try {
       const [d, a, ev] = await Promise.all([
@@ -29,13 +49,15 @@ export function PatientProvider({ children }) {
     } catch {
       setConnected(false);
     }
-  }, [activeRef]);
+  }, [activeRef, loadGlobalAlerts, loadWardOverview]);
 
   const loadPatients = useCallback(async () => {
     try {
       const list = await api.getPatients();
       setPatients(list);
       setConnected(true);
+      loadGlobalAlerts();
+      loadWardOverview();
       if (!activeRef && list.length) {
         setActiveRef(list[0].ref);
         refresh(list[0].ref);
@@ -45,7 +67,7 @@ export function PatientProvider({ children }) {
       setConnected(false);
       return [];
     }
-  }, [activeRef, refresh]);
+  }, [activeRef, refresh, loadGlobalAlerts, loadWardOverview]);
 
   function selectPatient(ref) {
     setActiveRef(ref);
@@ -99,6 +121,7 @@ export function PatientProvider({ children }) {
       lastInsulinTime: lastDose?.time ?? null,
       patientRef: activeRef,
     });
+    await api.setFeedStatus(activeRef, "feed_stopped");
     await loadPatients();
     await refresh();
     return res;
@@ -133,9 +156,9 @@ export function PatientProvider({ children }) {
   return (
     <PatientContext.Provider
       value={{
-        patients, activeRef, activePatient, dashboard, alerts, auditEvents,
+        patients, activeRef, activePatient, dashboard, alerts, globalAlerts, wardOverview, auditEvents,
         lastDose, connected,
-        loadPatients, selectPatient, createPatient, refresh,
+        loadPatients, selectPatient, createPatient, refresh, loadGlobalAlerts, loadWardOverview,
         logCbg, recordDose, stopFeed, restartFeed, assessKetone, ackAlert, loadAlerts,
       }}
     >

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { usePatient } from "../store/PatientContext.jsx";
 import { feedBadge } from "../lib/ui.js";
 import { OverviewTab, FeedTab, InsulinTab, AlertsTab, AuditTab, KetoneTab } from "./tabs.jsx";
-import { RefreshCw, UserCircle2, LayoutGrid, Soup, Syringe, Bell, FileText, FlaskConical } from "lucide-react";
+import RefreshButton from "./RefreshButton.jsx";
+import { UserCircle2, LayoutGrid, Soup, Syringe, Bell, FileText, FlaskConical } from "lucide-react";
 
 const TABS = [
   ["overview", "Overview", LayoutGrid],
@@ -46,13 +47,11 @@ export default function PatientDetail() {
             </div>
           </div>
         </div>
-        <button onClick={() => refresh()} className="flex items-center gap-1.5 text-sm border border-neutral-200 rounded-lg px-3 py-2">
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <RefreshButton onRefresh={refresh} className="border border-neutral-200 rounded-lg px-3 py-2" />
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 border-b border-neutral-200 mb-5 overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-neutral-200 mb-5">
         {TABS.map(([key, label, Icon]) => (
           <button
             key={key}
