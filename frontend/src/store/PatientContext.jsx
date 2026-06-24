@@ -1,57 +1,142 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
+import { api } from "../lib/api.js";
 
-// Minimal local-first store for the active patient + readings.
-// Swap for a persisted/offline store (e.g. IndexedDB) as the prototype grows.
 const PatientContext = createContext(null);
 
 export function PatientProvider({ children }) {
-  const [patient, setPatient] = useState({
-    diabetesType: "type2",
-    onPump: false,
-    onMetformin: true,
-    feedType: "continuous",
-    insulinType: "rapid_analogue",
-  });
-  const [readings, setReadings] = useState([]); // { cbg, ts }
-  const [feedState, setFeedState] = useState("running"); // "running" | "stopped"
-  const [feedStoppedAt, setFeedStoppedAt] = useState(null); // ISO | null
-  const [lastInsulinDose, setLastInsulinDose] = useState(null); // { type, units, time }
+  const [patients, setPatients] = useState([]);
+  const [activeRef, setActiveRef] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [auditEvents, setAuditEvents] = useState([]);
+  const [lastDose, setLastDose] = useState(null);
+  const [connected, setConnected] = useState(true);
 
-  function addReading(cbg) {
-    setReadings((r) => [{ cbg, ts: new Date().toISOString() }, ...r]);
+  const activePatient = patients.find((p) => p.ref === activeRef) || null;
+
+  const refresh = useCallback(async (ref = activeRef) => {
+    if (!ref) return;
+    try {
+      const [d, a, ev] = await Promise.all([
+        api.getDashboard(ref),
+        api.getAlerts(undefined, ref),
+        api.getAudit(40, ref),
+      ]);
+      setDashboard(d);
+      setAlerts(a);
+      setAuditEvents(ev);
+      setConnected(true);
+    } catch {
+      setConnected(false);
+    }
+  }, [activeRef]);
+
+  const loadPatients = useCallback(async () => {
+    try {
+      const list = await api.getPatients();
+      setPatients(list);
+      setConnected(true);
+      if (!activeRef && list.length) {
+        setActiveRef(list[0].ref);
+        refresh(list[0].ref);
+      }
+      return list;
+    } catch {
+      setConnected(false);
+      return [];
+    }
+  }, [activeRef, refresh]);
+
+  function selectPatient(ref) {
+    setActiveRef(ref);
+    setLastDose(null);
+    setDashboard(null);
+    setAlerts([]);
+    setAuditEvents([]);
+    refresh(ref);
   }
 
-  function stopFeed() {
-    setFeedState("stopped");
-    setFeedStoppedAt(new Date().toISOString());
+  async function createPatient(form) {
+    const p = await api.createPatient(form);
+    await loadPatients();
+    selectPatient(p.ref);
+    return p;
   }
 
-  function restartFeed() {
-    setFeedState("running");
-    setFeedStoppedAt(null);
+  // --- clinical actions (all scoped to the active patient) ---
+
+  function ctx() {
+    return {
+      diabetesType: activePatient?.diabetesType ?? "type2",
+      feedType: activePatient?.feedType ?? "continuous",
+      insulinType: activePatient?.insulinType ?? "rapid_analogue",
+      onPump: activePatient?.onPump ?? false,
+      onMetformin: activePatient?.onMetformin ?? true,
+    };
   }
 
-  function recordInsulinDose(type, units) {
-    setLastInsulinDose({
-      type,
-      units: parseFloat(units),
-      time: new Date().toISOString(),
+  async function logCbg(cbg) {
+    const res = await api.evaluate({ cbg, ...ctx(), patientRef: activeRef });
+    await refresh();
+    return res;
+  }
+
+  async function recordDose(type, units) {
+    const r = await api.recordInsulin({
+      insulinType: type, units: parseFloat(units), patientRef: activeRef,
     });
+    setLastDose({ type, units: parseFloat(units), time: r.ts });
+    await refresh();
+  }
+
+  async function stopFeed({ feedDoseDueNow, hypoSigns, nilByMouth }) {
+    const res = await api.feedStop({
+      diabetesType: ctx().diabetesType,
+      stoppedAt: new Date().toISOString(),
+      feedDoseDueNow, hypoSigns, nilByMouth,
+      lastInsulinType: lastDose?.type ?? null,
+      lastInsulinUnits: lastDose?.units ?? null,
+      lastInsulinTime: lastDose?.time ?? null,
+      patientRef: activeRef,
+    });
+    await loadPatients();
+    await refresh();
+    return res;
+  }
+
+  async function restartFeed() {
+    await api.setFeedStatus(activeRef, "feeding");
+    await loadPatients();
+    await refresh();
+  }
+
+  async function assessKetone(ketone, cbg) {
+    const res = await api.assessKetones({
+      ketoneMmol: parseFloat(ketone), cbg,
+      diabetesType: ctx().diabetesType, patientRef: activeRef,
+    });
+    await refresh();
+    return res;
+  }
+
+  async function ackAlert(id, by) {
+    await api.ackAlert(id, by);
+    await refresh();
+  }
+
+  async function loadAlerts(nowIso) {
+    const a = await api.getAlerts(nowIso, activeRef);
+    setAlerts(a);
+    return a;
   }
 
   return (
     <PatientContext.Provider
       value={{
-        patient,
-        setPatient,
-        readings,
-        addReading,
-        feedState,
-        feedStoppedAt,
-        stopFeed,
-        restartFeed,
-        lastInsulinDose,
-        recordInsulinDose,
+        patients, activeRef, activePatient, dashboard, alerts, auditEvents,
+        lastDose, connected,
+        loadPatients, selectPatient, createPatient, refresh,
+        logCbg, recordDose, stopFeed, restartFeed, assessKetone, ackAlert, loadAlerts,
       }}
     >
       {children}

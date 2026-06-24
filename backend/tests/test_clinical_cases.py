@@ -9,6 +9,7 @@ import pytest
 from app.config import RULES_DIR
 from app.engine.evaluator import evaluate
 from app.engine.feed_stop import assess_feed_stop
+from app.engine.ketones import assess_ketones
 from app.models.schemas import EvaluateRequest
 
 CASE_DIR = RULES_DIR / "cases"
@@ -48,6 +49,18 @@ def test_clinical_case(case_path):
             assert res["active_insulin"]["active"] == exp["active_insulin"]
         if "severity" in exp:
             assert res["severity"] == exp["severity"]
+
+    elif case["kind"] == "ketones":
+        res = assess_ketones(
+            ketone_mmol=inp.get("ketone_mmol"),
+            ketonuria_plus=inp.get("ketonuria_plus"),
+        )
+        if "level" in exp:
+            assert res["level"] == exp["level"]
+        if "escalate" in exp:
+            assert res["escalate"] == exp["escalate"]
+        if "dka_pathway" in exp:
+            assert res["dka_pathway"] == exp["dka_pathway"]
 
     else:
         pytest.fail(f"Unknown case kind: {case['kind']}")

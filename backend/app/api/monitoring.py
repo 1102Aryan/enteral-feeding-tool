@@ -1,20 +1,23 @@
 import json
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select
 
 
 from app.db import get_session
-from app.model.db_models import AuditEntry
+from app.models.db_models import AuditEntry
 from app.services.dashboard_service import compute_summary
 
 router = APIRouter(tags=["monitoring"])
 
 @router.get("/dashboard")
-def dashboard(session: Session = Depends(get_session)) -> dict:
+def dashboard(
+    patient_ref: str = Query("demo", alias="patientRef"),
+    session: Session = Depends(get_session),
+) -> dict:
     """
     Audit metric(s: time in range, hypohyper counts, feed-stop events.
     """
-    return compute_summary(session)
+    return compute_summary(session, patient_ref)
 
 @router.get("/audit")
 def audit_log(limit: int = 50, session: Session = Depends(get_session)) -> list[dict]:

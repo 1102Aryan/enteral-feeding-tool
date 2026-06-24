@@ -1,0 +1,15 @@
+version: uhl-jbds-v1
+# Escalation ladder + timeouts.
+# NOTE: timeouts are PLACEHOLDERS pending sponsor sign-off. The real ward
+# escalation chain and timings must be confirmed (roadmap Q0.5 #7).
+ladder:
+  - key: nurse
+    label: Ward nurse
+  - key: ward_doctor
+    label: Ward doctor
+  - key: dit
+    label: Diabetes Inpatient Team
+timeouts_minutes:
+  high: 10
+  moderate: 30
+  low: 60

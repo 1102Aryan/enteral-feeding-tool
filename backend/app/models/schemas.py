@@ -16,6 +16,7 @@ class EvaluateRequest(BaseModel):
     feed_type: str = Field("continuous", alias="feedType")
     insulin_type: str = Field("rapid_analogue", alias="insulinType")
     feed_running: bool = Field(True, alias="feedRunning")
+    patient_ref: str = Field("demo", alias="patientRef")
 
 class Band(BaseModel):
     key: str
@@ -84,3 +85,44 @@ class KetoneResponse(BaseModel):
     provenance: str
     protocol_version: str
 
+class AlertOut(BaseModel):
+    id: int
+    ts: str
+    event_type: str
+    severity: str
+    message: str
+    provenance: Optional[str] = None
+    status: str
+    escalation_level: int
+    current_role: str
+    acknowledged_by: Optional[str] = None
+    acknowledged_at: Optional[str] = None
+
+
+class AckRequest(BaseModel):
+    by: str
+
+
+class PatientCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    diabetes_type: str = Field("type2", alias="diabetesType")
+    on_pump: bool = Field(False, alias="onPump")
+    on_metformin: bool = Field(True, alias="onMetformin")
+    feed_type: str = Field("continuous", alias="feedType")
+    insulin_type: str = Field("rapid_analogue", alias="insulinType")
+    weight_kg: Optional[float] = Field(None, alias="weightKg")
+    hba1c: Optional[float] = None
+
+
+class PatientOut(BaseModel):
+    ref: str
+    name: str
+    diabetesType: str
+    onPump: bool
+    onMetformin: bool
+    feedType: str
+    insulinType: str
+    weightKg: Optional[float] = None
+    hba1c: Optional[float] = None
