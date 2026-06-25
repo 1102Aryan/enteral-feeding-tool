@@ -61,6 +61,30 @@ def acknowledge_alert(session: Session, alert_id: int, by: str) -> Optional[Aler
 
 
 
+def escalate_alert(session: Session, alert_id: int, by: str) -> Optional[Alert]:
+    """Manually bump an active alert one step up the ladder."""
+    rules = load_ruleset("escalation")
+    ladder = rules["ladder"]
+    max_level = len(ladder) - 1
+
+    alert = session.get(Alert, alert_id)
+    if alert is None or alert.status != "active":
+        return alert
+    if alert.escalation_level < max_level:
+        alert.escalation_level += 1
+        alert.last_escalated_at = _now()
+        session.add(alert)
+        session.commit()
+        session.refresh(alert)
+        write_audit(
+            session,
+            event_type="alert_escalated",
+            summary=f"Manually escalated to {ladder[alert.escalation_level]['label']} by {by}: {alert.message}",
+            detail={"alert_id": alert.id, "level": alert.escalation_level, "by": by},
+        )
+    return alert
+
+
 def escalate_due_alerts(session: Session, now: Optional[datetime] = None) -> list[Alert]:
     """
     Climb the ladder to escalate for any alerts past its timeout

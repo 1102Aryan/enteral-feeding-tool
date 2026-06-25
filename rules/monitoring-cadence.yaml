@@ -30,3 +30,6 @@ overrides:
     minutes: 120
     label: "Within 2 h of the feed stopping"
     provenance: "JBDS 05 §8.2"
+  pre_feed:
+    label: "Pre-feed check before the feed resumes"
+    provenance: "JBDS 05 §8.2"

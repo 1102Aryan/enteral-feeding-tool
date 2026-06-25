@@ -1,0 +1,21 @@
+version: uhl-jbds-v1
+# Role-based access control. Permissions per role govern who may acknowledge
+# alerts, escalate them, and edit the clinical rulesets.
+# NOTE: this access matrix is a PLACEHOLDER pending sponsor sign-off.
+roles:
+  nurse:
+    label: Ward nurse
+    permissions: [alert:acknowledge]
+  doctor:
+    label: Ward doctor
+    permissions: [alert:acknowledge, alert:escalate]
+  dit:
+    label: Diabetes Inpatient Team
+    permissions: [alert:acknowledge, alert:escalate, rules:edit]
+  admin:
+    label: Administrator
+    permissions: ["*"]
+  # Legacy role kept so previously-seeded accounts keep working.
+  clinician:
+    label: Clinician
+    permissions: [alert:acknowledge, alert:escalate]

@@ -35,8 +35,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const can = useCallback(
+    (permission) => {
+      const perms = user?.permissions ?? [];
+      return perms.includes("*") || perms.includes(permission);
+    },
+    [user]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, ready, login, logout }}>
+    <AuthContext.Provider value={{ user, ready, login, logout, can }}>
       {children}
     </AuthContext.Provider>
   );

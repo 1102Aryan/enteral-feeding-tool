@@ -4,7 +4,8 @@ import { feedBadge } from "../lib/ui.js";
 import { OverviewTab, FeedTab, InsulinTab, AlertsTab, AuditTab, KetoneTab } from "./tabs.jsx";
 import RefreshButton from "./RefreshButton.jsx";
 import EditPatientModal from "./EditPatientModal.jsx";
-import { UserCircle2, LayoutGrid, Soup, Syringe, Bell, FileText, FlaskConical, Pencil } from "lucide-react";
+import HandoverSummary from "./HandoverSummary.jsx";
+import { UserCircle2, LayoutGrid, Soup, Syringe, Bell, FileText, FlaskConical, Pencil, FileDown } from "lucide-react";
 
 const TABS = [
   ["overview", "Overview", LayoutGrid],
@@ -19,6 +20,7 @@ export default function PatientDetail() {
   const { activePatient, alerts, refresh } = usePatient();
   const [tab, setTab] = useState("overview");
   const [editing, setEditing] = useState(false);
+  const [handover, setHandover] = useState(false);
 
   if (!activePatient) {
     return (
@@ -51,6 +53,12 @@ export default function PatientDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setHandover(true)}
+            className="flex items-center gap-1.5 text-sm border border-neutral-200 rounded-lg px-3 py-2 hover:bg-neutral-50"
+          >
+            <FileDown size={14} /> Handover
+          </button>
+          <button
             onClick={() => setEditing(true)}
             className="flex items-center gap-1.5 text-sm border border-neutral-200 rounded-lg px-3 py-2 hover:bg-neutral-50"
           >
@@ -61,6 +69,7 @@ export default function PatientDetail() {
       </div>
 
       {editing && <EditPatientModal patient={p} onClose={() => setEditing(false)} />}
+      {handover && <HandoverSummary onClose={() => setHandover(false)} />}
 
       {/* Tab bar */}
       <div className="flex items-center gap-1 border-b border-neutral-200 mb-5">

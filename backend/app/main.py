@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import init_db, engine
 from sqlmodel import Session
-from app.api import recommendation, feed, alerts, ketones, patients, monitoring, feedback, auth, dosing
+from app.api import recommendation, feed, alerts, ketones, patients, monitoring, feedback, auth, dosing, rules
 from app.services.auth_service import ensure_default_user
 
 @asynccontextmanager
@@ -43,6 +43,7 @@ app.include_router(patients.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
 app.include_router(feedback.router, prefix="/api")
 app.include_router(dosing.router, prefix="/api")
+app.include_router(rules.router, prefix="/api")
 
 @app.get("/api/health")
 def health():

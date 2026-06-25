@@ -6,13 +6,30 @@ from app.models.db_models import User
 from app.models.schemas import LoginRequest, LoginResponse, UserOut
 from app.services.auth_service import (
     authenticate, create_token, user_for_token, revoke_token,
+    permissions_for_role, has_permission, role_label,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def _to_out(u: User) -> UserOut:
-    return UserOut(ref=u.ref, username=u.username, name=u.name, role=u.role)
+    return UserOut(
+        ref=u.ref,
+        username=u.username,
+        name=u.name,
+        role=u.role,
+        role_label=role_label(u.role),
+        permissions=permissions_for_role(u.role),
+    )
+
+
+def require_permission(permission: str):
+    """Dependency that allows the request only if the user's role grants `permission`."""
+    def checker(user: User = Depends(current_user)) -> User:
+        if not has_permission(user.role, permission):
+            raise HTTPException(status_code=403, detail=f"Requires permission: {permission}")
+        return user
+    return checker
 
 
 def _bearer(authorization: str | None) -> str:

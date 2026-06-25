@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePatient } from "../store/PatientContext.jsx";
+import { useAuth } from "../store/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { eventMeta, timeAgo } from "../lib/ui.js";
 import EventsTimeline from "./EventsTimeline.jsx";
@@ -7,7 +8,7 @@ import FeedStopAlert from "./FeedStopAlert.jsx";
 import RefreshButton from "./RefreshButton.jsx";
 import {
   Soup, Syringe, ShieldCheck, AlertOctagon, ShieldAlert, Info,
-  FlaskConical, ChevronUp, Activity, Clock, Calculator, TriangleAlert,
+  FlaskConical, ChevronUp, Activity, Clock, Calculator, TriangleAlert, ArrowUpCircle,
 } from "lucide-react";
 
 
@@ -143,30 +144,41 @@ function CbgEntry() {
 
  
 
-// Formats a minute count as "45 min" or "2 h 15 min".
-function fmtDuration(mins) {
-  const m = Math.abs(Math.round(mins));
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60), r = m % 60;
-  return r ? `${h} h ${r} min` : `${h} h`;
+// Formats a second count as a live ticker: "2h 15m", "45m 03s", or "12s".
+function fmtCountdown(secs) {
+  const s = Math.abs(Math.round(secs));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${String(r).padStart(2, "0")}s`;
+  return `${r}s`;
 }
 
 const basisLabel = {
   post_hypo: "After hypo",
   vriii: "VRIII",
   feed_stopped: "Feed stopped",
+  pre_feed: "Pre-feed",
   routine: "Routine",
 };
 
-// "Next CBG due" prompt driven by the JBDS §8.2 cadence.
+// "Next CBG due" prompt driven by the JBDS §8.2 cadence, ticking live.
 function NextReadingCard() {
-  const { nextReading } = usePatient();
+  const { nextReading, activePatient } = usePatient();
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   if (!nextReading) return null;
 
   const due = new Date(nextReading.next_due);
-  const minsUntil = Math.round((due - Date.now()) / 60000);
-  const overdue = minsUntil <= 0;
-  const soon = !overdue && minsUntil <= 30;
+  const secsUntil = Math.round((due.getTime() - now) / 1000);
+  const overdue = secsUntil <= 0;
+  const soon = !overdue && secsUntil <= 30 * 60;
   const tone = overdue
     ? "border-band-hypo bg-band-hypo/5"
     : soon
@@ -181,9 +193,12 @@ function NextReadingCard() {
         <Clock size={20} className={accent} />
         <div>
           <div className={`font-semibold ${accent}`}>
-            {overdue ? `CBG overdue by ${fmtDuration(minsUntil)}` : `Next CBG due in ${fmtDuration(minsUntil)}`}
+            {overdue ? `CBG overdue by ${fmtCountdown(secsUntil)}` : `Next CBG due in ${fmtCountdown(secsUntil)}`}
           </div>
           <div className="text-sm text-neutral-500">{nextReading.cadence_label} · due {timeStr}</div>
+          {activePatient?.breakStart && activePatient?.breakEnd && (
+            <div className="text-xs text-neutral-400 mt-0.5">Feed break {activePatient.breakStart}–{activePatient.breakEnd}{activePatient.carbsPerHour ? ` · ${activePatient.carbsPerHour} g/hr` : ""}</div>
+          )}
         </div>
       </div>
       <div className="text-right shrink-0">
@@ -338,6 +353,90 @@ const STOP_REASONS = [
   ["other", "Other"],
 ];
 
+// Feed regimen detail — carbs, rate, duration, break window.
+function FeedRegimenCard() {
+  const { activePatient: p, updatePatient } = usePatient();
+  const [form, setForm] = useState({
+    feedProduct: p?.feedProduct ?? "",
+    infusionRateMlHr: p?.infusionRateMlHr ?? "",
+    feedCarbsG: p?.feedCarbsG ?? "",
+    feedDurationHours: p?.feedDurationHours ?? "",
+    feedStart: p?.feedStart ?? "",
+    breakStart: p?.breakStart ?? "",
+    breakEnd: p?.breakEnd ?? "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setSaved(false); };
+  const num = (v) => (v === "" ? null : parseFloat(v));
+  const carbsPerHour =
+    form.feedCarbsG && form.feedDurationHours
+      ? Math.round((parseFloat(form.feedCarbsG) / parseFloat(form.feedDurationHours)) * 10) / 10
+      : null;
+
+  async function save() {
+    setBusy(true);
+    try {
+      await updatePatient(p.ref, {
+        feedProduct: form.feedProduct || null,
+        infusionRateMlHr: num(form.infusionRateMlHr),
+        feedCarbsG: num(form.feedCarbsG),
+        feedDurationHours: num(form.feedDurationHours),
+        feedStart: form.feedStart || null,
+        breakStart: form.breakStart || null,
+        breakEnd: form.breakEnd || null,
+      });
+      setSaved(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1 text-ink font-semibold"><Soup size={17} /> Feed regimen detail</div>
+      <p className="text-sm text-neutral-500 mb-4">Drives carb-based insulin dosing and the monitoring cadence (pre-feed / break checks).</p>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="col-span-2 text-xs text-neutral-500">Feed product
+          <input value={form.feedProduct} onChange={set("feedProduct")} placeholder="e.g. Nutrison Energy"
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+        <label className="text-xs text-neutral-500">Total carbohydrate (g)
+          <input type="number" value={form.feedCarbsG} onChange={set("feedCarbsG")}
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+        <label className="text-xs text-neutral-500">Feed duration (h/day)
+          <input type="number" value={form.feedDurationHours} onChange={set("feedDurationHours")}
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+        <label className="text-xs text-neutral-500">Infusion rate (ml/hr)
+          <input type="number" value={form.infusionRateMlHr} onChange={set("infusionRateMlHr")}
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+        <label className="text-xs text-neutral-500">Feed start
+          <input type="time" value={form.feedStart} onChange={set("feedStart")}
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+        <label className="text-xs text-neutral-500">Break start
+          <input type="time" value={form.breakStart} onChange={set("breakStart")}
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+        <label className="text-xs text-neutral-500">Break end (feed resumes)
+          <input type="time" value={form.breakEnd} onChange={set("breakEnd")}
+            className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-neutral-200" />
+        </label>
+      </div>
+      {carbsPerHour != null && (
+        <p className="text-sm text-neutral-600 mt-3">Carbohydrate per hour: <strong>{carbsPerHour} g/hr</strong></p>
+      )}
+      <button onClick={save} disabled={busy} className="mt-3 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-40">
+        {busy ? "Saving…" : saved ? "Saved ✓" : "Save feed regimen"}
+      </button>
+    </Card>
+  );
+}
+
 // ---------- Feed (the stop guard) ----------
 export function FeedTab() {
   const { activePatient, stopFeed, restartFeed } = usePatient();
@@ -354,6 +453,7 @@ export function FeedTab() {
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <FeedRegimenCard key={activePatient?.ref} />
       <Card>
         <div className="flex items-center gap-2 mb-4 text-ink font-semibold"><Soup size={17} /> Feed-stop safety guard</div>
         {stopped ? (
@@ -402,7 +502,7 @@ function InsulinDoseCalculator() {
   const [cbg, setCbg] = useState("");
   const [vriii, setVriii] = useState(null);
   const [weight, setWeight] = useState(activePatient?.weightKg ?? "");
-  const [carbs, setCarbs] = useState("");
+  const [carbs, setCarbs] = useState(activePatient?.feedCarbsG ?? "");
   const [highRisk, setHighRisk] = useState(false);
   const [tfd, setTfd] = useState(null);
   const [err, setErr] = useState(null);
@@ -512,8 +612,8 @@ export function InsulinTab() {
 
 // ---------- Alerts ----------
 export function AlertsTab() {
-  const { alerts, ackAlert, loadAlerts } = usePatient();
-  const [ackName, setAckName] = useState("Ward nurse");
+  const { alerts, ackAlert, escalateAlert, loadAlerts } = usePatient();
+  const { user, can } = useAuth();
   const [simMin, setSimMin] = useState(0);
 
   async function advance(m) {
@@ -525,6 +625,8 @@ export function AlertsTab() {
   const sev = { high: "border-band-hypo bg-band-hypo/5", moderate: "border-band-looming bg-band-looming/5", low: "border-band-target bg-band-target/5" };
   const active = alerts.filter((a) => a.status === "active");
   const acked = alerts.filter((a) => a.status === "acknowledged");
+  const canAck = can("alert:acknowledge");
+  const canEscalate = can("alert:escalate");
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -534,8 +636,7 @@ export function AlertsTab() {
         <button onClick={() => advance(30)} className="px-2 py-1 rounded border border-neutral-200">+30 min</button>
         <button onClick={() => { setSimMin(0); loadAlerts(); }} className="px-2 py-1 rounded border border-neutral-200">reset</button>
         {simMin > 0 && <span className="text-neutral-400">+{simMin} min</span>}
-        <span className="ml-auto text-neutral-500">Acknowledging as:</span>
-        <input value={ackName} onChange={(e) => setAckName(e.target.value)} className="px-2 py-1 rounded border border-neutral-200 w-32" />
+        <span className="ml-auto text-neutral-500">Acting as <strong className="text-neutral-700">{user?.name}</strong> ({user?.role_label ?? user?.role})</span>
       </Card>
 
       <h3 className="text-sm font-semibold text-neutral-600">Active ({active.length})</h3>
@@ -549,7 +650,27 @@ export function AlertsTab() {
           <p className="text-sm font-medium text-neutral-800">{a.message}</p>
           <div className="flex items-center gap-1.5 text-xs text-neutral-600"><ChevronUp size={14} /> Currently with: <strong>{a.current_role}</strong></div>
           {a.provenance && <p className="text-xs text-neutral-400">Rule: {a.provenance}</p>}
-          <button onClick={() => ackAlert(a.id, ackName)} className="px-4 py-1.5 rounded-lg bg-primary text-white text-sm font-semibold">Acknowledge</button>
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => ackAlert(a.id)}
+              disabled={!canAck}
+              title={canAck ? "" : "Your role cannot acknowledge alerts"}
+              className="px-4 py-1.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-40"
+            >
+              Acknowledge
+            </button>
+            <button
+              onClick={() => escalateAlert(a.id)}
+              disabled={!canEscalate}
+              title={canEscalate ? "" : "Your role cannot escalate alerts"}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-neutral-300 text-sm font-semibold text-neutral-700 disabled:opacity-40"
+            >
+              <ArrowUpCircle size={15} /> Escalate
+            </button>
+          </div>
+          {!canAck && !canEscalate && (
+            <p className="text-xs text-neutral-400">Your role ({user?.role_label ?? user?.role}) has view-only access to alerts.</p>
+          )}
         </div>
       ))}
 

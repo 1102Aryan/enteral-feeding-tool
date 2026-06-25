@@ -71,8 +71,10 @@ export const api = {
     ),
   // Active alerts across all patients — top-bar dropdown.
   getAllAlerts: () => request("/alerts/all"),
-  ackAlert: (id, by) =>
-    request(`/alerts/${id}/ack`, { method: "POST", body: JSON.stringify({ by }) }),
+  ackAlert: (id) =>
+    request(`/alerts/${id}/ack`, { method: "POST" }),
+  escalateAlert: (id) =>
+    request(`/alerts/${id}/escalate`, { method: "POST" }),
 
   // Feedback (sidebar overlay)
   submitFeedback: (payload) =>

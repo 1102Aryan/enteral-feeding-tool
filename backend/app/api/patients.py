@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -10,6 +12,12 @@ router = APIRouter(prefix="/patients", tags=["patients"])
 
 FEED_STATUSES = {"feeding", "feed_stopped", "not_feeding"}
 
+def _carbs_per_hour(p: Patient) -> Optional[float]:
+    if p.feed_carbs_g and p.feed_duration_hours:
+        return round(p.feed_carbs_g / p.feed_duration_hours, 1)
+    return None
+
+
 def _to_out(p: Patient) -> PatientOut:
     return PatientOut(
         ref=p.ref,
@@ -21,6 +29,14 @@ def _to_out(p: Patient) -> PatientOut:
         insulinType=p.insulin_type,
         onVriii=p.on_vriii,
         feedStatus=p.feed_status,
+        feedProduct=p.feed_product,
+        infusionRateMlHr=p.infusion_rate_ml_hr,
+        feedCarbsG=p.feed_carbs_g,
+        feedDurationHours=p.feed_duration_hours,
+        carbsPerHour=_carbs_per_hour(p),
+        feedStart=p.feed_start,
+        breakStart=p.break_start,
+        breakEnd=p.break_end,
         weightKg=p.weight_kg,
         hba1c=p.hba1c,
     )

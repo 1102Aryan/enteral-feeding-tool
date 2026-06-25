@@ -153,8 +153,13 @@ export function PatientProvider({ children }) {
     return res;
   }
 
-  async function ackAlert(id, by) {
-    await api.ackAlert(id, by);
+  async function ackAlert(id) {
+    await api.ackAlert(id);
+    await refresh();
+  }
+
+  async function escalateAlert(id) {
+    await api.escalateAlert(id);
     await refresh();
   }
 
@@ -170,7 +175,7 @@ export function PatientProvider({ children }) {
         patients, activeRef, activePatient, dashboard, alerts, globalAlerts, wardOverview, nextReading, auditEvents,
         lastDose, connected,
         loadPatients, selectPatient, createPatient, updatePatient, refresh, loadGlobalAlerts, loadWardOverview,
-        logCbg, recordDose, stopFeed, restartFeed, assessKetone, ackAlert, loadAlerts,
+        logCbg, recordDose, stopFeed, restartFeed, assessKetone, ackAlert, escalateAlert, loadAlerts,
       }}
     >
       {children}

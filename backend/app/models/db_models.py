@@ -61,6 +61,14 @@ class Patient(SQLModel, table=True):
     insulin_type: str = "rapid_analogue"
     on_vriii: bool = False  # variable-rate IV insulin infusion -> hourly CBG
     feed_status: str = "feeding"  # feeding | feed_stopped | not_feeding
+    # Feed regimen detail (JBDS §3.3, §8 — drives dosing + monitoring cadence).
+    feed_product: Optional[str] = None
+    infusion_rate_ml_hr: Optional[float] = None
+    feed_carbs_g: Optional[float] = None        # total carbohydrate over the feed
+    feed_duration_hours: Optional[float] = None
+    feed_start: Optional[str] = None            # HH:MM the feed starts
+    break_start: Optional[str] = None           # HH:MM planned break starts
+    break_end: Optional[str] = None             # HH:MM feed resumes
     weight_kg: Optional[float] = None
     hba1c: Optional[float] = None
     created_at: datetime = Field(default_factory=_now)

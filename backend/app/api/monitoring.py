@@ -49,6 +49,8 @@ def next_reading(
         insulin_type=patient.insulin_type,
         feed_status=patient.feed_status,
         on_vriii=patient.on_vriii,
+        break_start=patient.break_start,
+        break_end=patient.break_end,
         last_reading_at=last.ts if last else None,
         last_band=last.band_key if last else None,
     )

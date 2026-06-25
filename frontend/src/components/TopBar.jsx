@@ -115,7 +115,10 @@ export default function TopBar({ onNavigate }) {
           <span className="w-7 h-7 rounded-full bg-neutral-800 text-white text-xs flex items-center justify-center font-semibold">
             {initials(user?.name)}
           </span>
-          {user?.name ?? "—"}
+          <span className="leading-tight">
+            <span className="block">{user?.name ?? "—"}</span>
+            <span className="block text-[11px] text-neutral-400">{user?.role_label ?? user?.role}</span>
+          </span>
           <button
             onClick={logout}
             title="Sign out"

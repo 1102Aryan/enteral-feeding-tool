@@ -15,3 +15,24 @@ body {
   background: #fdf9ef;
   color: #0f1f2a;
 }
+
+/* When printing the handover sheet, hide everything except the sheet itself. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #handover-sheet,
+  #handover-sheet * {
+    visibility: visible;
+  }
+  #handover-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

@@ -71,9 +71,26 @@ export default function Login() {
             <LogIn size={16} /> {busy ? "Signing in…" : "Sign in"}
           </button>
 
-          <p className="text-xs text-neutral-400 text-center border-t border-neutral-100 pt-3">
-            Demo login — <span className="font-medium text-neutral-500">clinician</span> / <span className="font-medium text-neutral-500">enteral123</span>
-          </p>
+          <div className="border-t border-neutral-100 pt-3">
+            <p className="text-xs text-neutral-400 mb-2">Demo accounts (tap to fill):</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                ["nurse", "nurse123", "Nurse"],
+                ["doctor", "doctor123", "Doctor"],
+                ["dit", "dit123", "DIT"],
+                ["admin", "admin123", "Admin"],
+              ].map(([u, p, label]) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => { setUsername(u); setPassword(p); }}
+                  className="text-xs px-2 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </form>
 
         <p className="text-center text-xs text-neutral-400 mt-4">

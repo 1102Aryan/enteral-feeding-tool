@@ -115,6 +115,13 @@ class PatientCreate(BaseModel):
     feed_type: str = Field("continuous", alias="feedType")
     insulin_type: str = Field("rapid_analogue", alias="insulinType")
     on_vriii: bool = Field(False, alias="onVriii")
+    feed_product: Optional[str] = Field(None, alias="feedProduct")
+    infusion_rate_ml_hr: Optional[float] = Field(None, alias="infusionRateMlHr")
+    feed_carbs_g: Optional[float] = Field(None, alias="feedCarbsG")
+    feed_duration_hours: Optional[float] = Field(None, alias="feedDurationHours")
+    feed_start: Optional[str] = Field(None, alias="feedStart")
+    break_start: Optional[str] = Field(None, alias="breakStart")
+    break_end: Optional[str] = Field(None, alias="breakEnd")
     weight_kg: Optional[float] = Field(None, alias="weightKg")
     hba1c: Optional[float] = None
 
@@ -129,6 +136,14 @@ class PatientOut(BaseModel):
     insulinType: str
     onVriii: bool = False
     feedStatus: str = "feeding"
+    feedProduct: Optional[str] = None
+    infusionRateMlHr: Optional[float] = None
+    feedCarbsG: Optional[float] = None
+    feedDurationHours: Optional[float] = None
+    carbsPerHour: Optional[float] = None  # derived: feedCarbsG / feedDurationHours
+    feedStart: Optional[str] = None
+    breakStart: Optional[str] = None
+    breakEnd: Optional[str] = None
     weightKg: Optional[float] = None
     hba1c: Optional[float] = None
 
@@ -144,6 +159,13 @@ class PatientUpdate(BaseModel):
     feed_type: Optional[str] = Field(None, alias="feedType")
     insulin_type: Optional[str] = Field(None, alias="insulinType")
     on_vriii: Optional[bool] = Field(None, alias="onVriii")
+    feed_product: Optional[str] = Field(None, alias="feedProduct")
+    infusion_rate_ml_hr: Optional[float] = Field(None, alias="infusionRateMlHr")
+    feed_carbs_g: Optional[float] = Field(None, alias="feedCarbsG")
+    feed_duration_hours: Optional[float] = Field(None, alias="feedDurationHours")
+    feed_start: Optional[str] = Field(None, alias="feedStart")
+    break_start: Optional[str] = Field(None, alias="breakStart")
+    break_end: Optional[str] = Field(None, alias="breakEnd")
     weight_kg: Optional[float] = Field(None, alias="weightKg")
     hba1c: Optional[float] = None
 
@@ -175,6 +197,8 @@ class UserOut(BaseModel):
     username: str
     name: str
     role: str
+    role_label: str = ""
+    permissions: list[str] = []
 
 
 class LoginResponse(BaseModel):
