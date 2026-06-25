@@ -5,3 +5,4 @@ pyyaml>=6.0
 pytest>=8.0
 httpx2>=0.27
 sqlmodel>=0.0.16
+argon2-cffi>=23.1

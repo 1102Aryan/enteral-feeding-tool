@@ -5,6 +5,7 @@ import Sidebar from "./components/Sidebar.jsx";
 import PatientList from "./components/PatientList.jsx";
 import PatientDetail from "./components/PatientDetail.jsx";
 import WardDashboard from "./components/WardDashboard.jsx";
+import AnalyticsView from "./components/AnalyticsView.jsx";
 import { AlertsTab, AuditTab } from "./components/tabs.jsx";
 import { Settings as SettingsIcon } from "lucide-react";
 
@@ -15,7 +16,7 @@ const TYPES = [
 
 function AddPatientModal({ onClose }) {
   const { createPatient } = usePatient();
-  const [form, setForm] = useState({ name: "", mrn: "", age: "", ward: "", diabetesType: "type2", feedType: "continuous" });
+  const [form, setForm] = useState({ name: "", mrn: "", age: "", ward: "", diabetesType: "type2", feedType: "continuous", onVriii: false });
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function add() {
@@ -37,6 +38,14 @@ function AddPatientModal({ onClose }) {
             {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
+        <label className="flex items-center gap-2 text-sm text-neutral-700">
+          <input
+            type="checkbox"
+            checked={form.onVriii}
+            onChange={(e) => setForm((f) => ({ ...f, onVriii: e.target.checked }))}
+          />
+          On variable-rate IV insulin (VRIII) — hourly CBG
+        </label>
         <div className="flex gap-2 pt-1">
           <button onClick={add} disabled={!form.name.trim()} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-40">Add</button>
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-neutral-200 text-sm">Cancel</button>
@@ -77,7 +86,7 @@ function SettingsPanel() {
 }
 
 // Which views show the middle patient list (the rest go full width).
-const WITH_LIST = new Set(["patients", "alerts", "audit"]);
+const WITH_LIST = new Set(["patients", "alerts", "audit", "analytics"]);
 
 function MainView({ view, onNavigate }) {
   switch (view) {
@@ -88,7 +97,7 @@ function MainView({ view, onNavigate }) {
     case "audit":
       return <SectionPanel title="Audit log" subtitle="Time-in-range and events during enteral feeding"><AuditTab /></SectionPanel>;
     case "analytics":
-      return <SectionPanel title="Analytics" subtitle="Aggregate glycaemic metrics"><AuditTab /></SectionPanel>;
+      return <AnalyticsView />;
     case "settings":
       return <SettingsPanel />;
     default: // patients

@@ -3,12 +3,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import init_db
-from app.api import recommendation, feed, alerts, ketones, patients, monitoring, feedback
+from app.db import init_db, engine
+from sqlmodel import Session
+from app.api import recommendation, feed, alerts, ketones, patients, monitoring, feedback, auth, dosing
+from app.services.auth_service import ensure_default_user
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    with Session(engine) as session:
+        ensure_default_user(session)
     yield
 
 
@@ -30,6 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(recommendation.router, prefix="/api")
 app.include_router(feed.router, prefix="/api")
 app.include_router(alerts.router, prefix="/api")
@@ -37,6 +42,7 @@ app.include_router(ketones.router, prefix="/api")
 app.include_router(patients.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
 app.include_router(feedback.router, prefix="/api")
+app.include_router(dosing.router, prefix="/api")
 
 @app.get("/api/health")
 def health():

@@ -114,6 +114,7 @@ class PatientCreate(BaseModel):
     on_metformin: bool = Field(True, alias="onMetformin")
     feed_type: str = Field("continuous", alias="feedType")
     insulin_type: str = Field("rapid_analogue", alias="insulinType")
+    on_vriii: bool = Field(False, alias="onVriii")
     weight_kg: Optional[float] = Field(None, alias="weightKg")
     hba1c: Optional[float] = None
 
@@ -126,13 +127,59 @@ class PatientOut(BaseModel):
     onMetformin: bool
     feedType: str
     insulinType: str
+    onVriii: bool = False
     feedStatus: str = "feeding"
     weightKg: Optional[float] = None
     hba1c: Optional[float] = None
 
 
+class PatientUpdate(BaseModel):
+    """Partial update — only the fields sent are changed."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: Optional[str] = None
+    diabetes_type: Optional[str] = Field(None, alias="diabetesType")
+    on_pump: Optional[bool] = Field(None, alias="onPump")
+    on_metformin: Optional[bool] = Field(None, alias="onMetformin")
+    feed_type: Optional[str] = Field(None, alias="feedType")
+    insulin_type: Optional[str] = Field(None, alias="insulinType")
+    on_vriii: Optional[bool] = Field(None, alias="onVriii")
+    weight_kg: Optional[float] = Field(None, alias="weightKg")
+    hba1c: Optional[float] = None
+
+
 class FeedStatusUpdate(BaseModel):
     status: str  # feeding | feed_stopped | not_feeding
+    reason: Optional[str] = None  # documented hypo trigger (JBDS Table 2)
+
+
+class VriiiRequest(BaseModel):
+    cbg: float
+
+
+class TfdRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    weight_kg: float = Field(..., alias="weightKg")
+    high_hypo_risk: bool = Field(False, alias="highHypoRisk")
+    feed_carbs_g: Optional[float] = Field(None, alias="feedCarbsG")
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserOut(BaseModel):
+    ref: str
+    username: str
+    name: str
+    role: str
+
+
+class LoginResponse(BaseModel):
+    token: str
+    user: UserOut
 
 
 class FeedbackCreate(BaseModel):

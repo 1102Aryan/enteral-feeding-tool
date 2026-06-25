@@ -1,0 +1,32 @@
+version: jbds-8.2-v1
+# CBG monitoring cadence that drives the "next reading due" prompt.
+# Routine intervals are in minutes, by feed type and insulin class.
+# Source: JBDS 05 §8.2; UHL B6/2020 §2.8.
+provenance: "JBDS 05 §8.2; UHL B6/2020 §2.8"
+
+routine:
+  continuous:
+    rapid_analogue: { min: 240, max: 240, label: "Pre-feed + every 4 h" }
+    default:        { min: 240, max: 360, label: "Pre-feed + every 4-6 h" }
+  intermittent:
+    rapid_analogue: { min: 240, max: 240, label: "Pre-feed, every 4 h, 2 h post-feed" }
+    default:        { min: 240, max: 360, label: "Pre-feed, every 4-6 h, 2 h post-feed" }
+  bolus:
+    default:        { min: 240, max: 240, label: "Pre-feed, 2 h post-feed, 4-hourly in gaps" }
+  single:
+    default:        { min: 240, max: 360, label: "Pre-feed + every 4-6 h" }
+
+# Conditions that override the routine cadence, highest priority first.
+overrides:
+  post_hypo:
+    minutes: 15
+    label: "15-minutely recheck after hypoglycaemia"
+    provenance: "JBDS 05 §12; UHL B6/2020 Table 3"
+  vriii:
+    minutes: 60
+    label: "Hourly while on VRIII"
+    provenance: "JBDS 05 §8.2; UHL B6/2020 §2.8"
+  feed_stopped:
+    minutes: 120
+    label: "Within 2 h of the feed stopping"
+    provenance: "JBDS 05 §8.2"

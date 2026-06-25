@@ -1,7 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { usePatient } from "../store/PatientContext.jsx";
+import { useAuth } from "../store/AuthContext.jsx";
 import { timeAgo } from "../lib/ui.js";
-import { Bell, ChevronUp } from "lucide-react";
+import { Bell, ChevronUp, LogOut } from "lucide-react";
+
+function initials(name) {
+  return (name || "")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "?";
+}
 
 const sevDot = {
   high: "bg-band-hypo",
@@ -11,6 +22,7 @@ const sevDot = {
 
 export default function TopBar({ onNavigate }) {
   const { globalAlerts, selectPatient } = usePatient();
+  const { user, logout } = useAuth();
   const active = globalAlerts.filter((a) => a.status === "active");
   const count = active.length;
 
@@ -101,9 +113,16 @@ export default function TopBar({ onNavigate }) {
 
         <div className="flex items-center gap-2 text-sm">
           <span className="w-7 h-7 rounded-full bg-neutral-800 text-white text-xs flex items-center justify-center font-semibold">
-            DS
+            {initials(user?.name)}
           </span>
-          Dr. Smith
+          {user?.name ?? "—"}
+          <button
+            onClick={logout}
+            title="Sign out"
+            className="ml-1 p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </header>

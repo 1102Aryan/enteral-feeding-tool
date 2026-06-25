@@ -10,6 +10,7 @@ export function PatientProvider({ children }) {
   const [alerts, setAlerts] = useState([]);
   const [globalAlerts, setGlobalAlerts] = useState([]);
   const [wardOverview, setWardOverview] = useState(null);
+  const [nextReading, setNextReading] = useState(null);
   const [auditEvents, setAuditEvents] = useState([]);
   const [lastDose, setLastDose] = useState(null);
   const [connected, setConnected] = useState(true);
@@ -37,14 +38,16 @@ export function PatientProvider({ children }) {
     loadWardOverview();
     if (!ref) return;
     try {
-      const [d, a, ev] = await Promise.all([
+      const [d, a, ev, nr] = await Promise.all([
         api.getDashboard(ref),
         api.getAlerts(undefined, ref),
         api.getAudit(40, ref),
+        api.getNextReading(ref),
       ]);
       setDashboard(d);
       setAlerts(a);
       setAuditEvents(ev);
+      setNextReading(nr);
       setConnected(true);
     } catch {
       setConnected(false);
@@ -75,6 +78,7 @@ export function PatientProvider({ children }) {
     setDashboard(null);
     setAlerts([]);
     setAuditEvents([]);
+    setNextReading(null);
     refresh(ref);
   }
 
@@ -82,6 +86,13 @@ export function PatientProvider({ children }) {
     const p = await api.createPatient(form);
     await loadPatients();
     selectPatient(p.ref);
+    return p;
+  }
+
+  async function updatePatient(ref, form) {
+    const p = await api.updatePatient(ref, form);
+    await loadPatients();
+    await refresh(ref);
     return p;
   }
 
@@ -111,7 +122,7 @@ export function PatientProvider({ children }) {
     await refresh();
   }
 
-  async function stopFeed({ feedDoseDueNow, hypoSigns, nilByMouth }) {
+  async function stopFeed({ feedDoseDueNow, hypoSigns, nilByMouth, reason }) {
     const res = await api.feedStop({
       diabetesType: ctx().diabetesType,
       stoppedAt: new Date().toISOString(),
@@ -121,7 +132,7 @@ export function PatientProvider({ children }) {
       lastInsulinTime: lastDose?.time ?? null,
       patientRef: activeRef,
     });
-    await api.setFeedStatus(activeRef, "feed_stopped");
+    await api.setFeedStatus(activeRef, "feed_stopped", reason ?? null);
     await loadPatients();
     await refresh();
     return res;
@@ -156,9 +167,9 @@ export function PatientProvider({ children }) {
   return (
     <PatientContext.Provider
       value={{
-        patients, activeRef, activePatient, dashboard, alerts, globalAlerts, wardOverview, auditEvents,
+        patients, activeRef, activePatient, dashboard, alerts, globalAlerts, wardOverview, nextReading, auditEvents,
         lastDose, connected,
-        loadPatients, selectPatient, createPatient, refresh, loadGlobalAlerts, loadWardOverview,
+        loadPatients, selectPatient, createPatient, updatePatient, refresh, loadGlobalAlerts, loadWardOverview,
         logCbg, recordDose, stopFeed, restartFeed, assessKetone, ackAlert, loadAlerts,
       }}
     >

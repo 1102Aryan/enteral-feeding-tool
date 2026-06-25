@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { usePatient } from "../store/PatientContext.jsx";
+import { api } from "../lib/api.js";
 import { eventMeta, timeAgo } from "../lib/ui.js";
 import EventsTimeline from "./EventsTimeline.jsx";
 import FeedStopAlert from "./FeedStopAlert.jsx";
 import RefreshButton from "./RefreshButton.jsx";
 import {
   Soup, Syringe, ShieldCheck, AlertOctagon, ShieldAlert, Info,
-  FlaskConical, ChevronUp, Activity,
+  FlaskConical, ChevronUp, Activity, Clock, Calculator, TriangleAlert,
 } from "lucide-react";
 
 
@@ -142,6 +143,59 @@ function CbgEntry() {
 
  
 
+// Formats a minute count as "45 min" or "2 h 15 min".
+function fmtDuration(mins) {
+  const m = Math.abs(Math.round(mins));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? `${h} h ${r} min` : `${h} h`;
+}
+
+const basisLabel = {
+  post_hypo: "After hypo",
+  vriii: "VRIII",
+  feed_stopped: "Feed stopped",
+  routine: "Routine",
+};
+
+// "Next CBG due" prompt driven by the JBDS §8.2 cadence.
+function NextReadingCard() {
+  const { nextReading } = usePatient();
+  if (!nextReading) return null;
+
+  const due = new Date(nextReading.next_due);
+  const minsUntil = Math.round((due - Date.now()) / 60000);
+  const overdue = minsUntil <= 0;
+  const soon = !overdue && minsUntil <= 30;
+  const tone = overdue
+    ? "border-band-hypo bg-band-hypo/5"
+    : soon
+    ? "border-band-looming bg-band-looming/5"
+    : "border-neutral-200 bg-white";
+  const accent = overdue ? "text-band-hypo" : soon ? "text-band-looming" : "text-ink";
+  const timeStr = due.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 ${tone}`}>
+      <div className="flex items-center gap-3">
+        <Clock size={20} className={accent} />
+        <div>
+          <div className={`font-semibold ${accent}`}>
+            {overdue ? `CBG overdue by ${fmtDuration(minsUntil)}` : `Next CBG due in ${fmtDuration(minsUntil)}`}
+          </div>
+          <div className="text-sm text-neutral-500">{nextReading.cadence_label} · due {timeStr}</div>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-neutral-100 text-neutral-500">
+          {basisLabel[nextReading.basis] ?? nextReading.basis}
+        </span>
+        <p className="text-xs text-neutral-400 mt-1 max-w-[180px]">{nextReading.provenance}</p>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Overview ----------
 export function OverviewTab() {
   const { activePatient, dashboard, lastDose, auditEvents } = usePatient();
@@ -150,6 +204,7 @@ export function OverviewTab() {
   return (
     <div className="space-y-4">
       <CbgEntry />
+      <NextReadingCard />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <FeedStatusCard />
@@ -271,17 +326,30 @@ function AuditCard({ dashboard }) {
   );
 }
 
+// Documented feed-stop reasons (hypo triggers, JBDS Table 2).
+const STOP_REASONS = [
+  ["medication", "Medication administration"],
+  ["procedure", "Physio / procedure"],
+  ["personal_care", "Washing / shower"],
+  ["vomiting", "Vomiting"],
+  ["tube_blocked", "Tube blocked"],
+  ["tube_displaced", "Tube displaced / removed"],
+  ["refused", "Patient refused"],
+  ["other", "Other"],
+];
+
 // ---------- Feed (the stop guard) ----------
 export function FeedTab() {
   const { activePatient, stopFeed, restartFeed } = usePatient();
   const [doseDue, setDoseDue] = useState(false);
   const [hypoSigns, setHypoSigns] = useState(false);
   const [nbm, setNbm] = useState(false);
+  const [reason, setReason] = useState("");
   const [result, setResult] = useState(null);
   const stopped = activePatient?.feedStatus === "feed_stopped";
 
   async function handleStop() {
-    setResult(await stopFeed({ feedDoseDueNow: doseDue, hypoSigns, nilByMouth: nbm }));
+    setResult(await stopFeed({ feedDoseDueNow: doseDue, hypoSigns, nilByMouth: nbm, reason: reason || null }));
   }
 
   return (
@@ -294,10 +362,21 @@ export function FeedTab() {
           </button>
         ) : (
           <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Reason for stopping</label>
+              <select
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-neutral-200"
+              >
+                <option value="">Select a reason…</option>
+                {STOP_REASONS.map(([v, l]) => <option key={v} value={l}>{l}</option>)}
+              </select>
+            </div>
             <Toggle label="A feed-related insulin dose is due now" checked={doseDue} onChange={setDoseDue} />
             <Toggle label="Signs of hypoglycaemia present" checked={hypoSigns} onChange={setHypoSigns} />
             <Toggle label="Nil by mouth" checked={nbm} onChange={setNbm} />
-            <button onClick={handleStop} className="w-full py-2.5 rounded-lg bg-band-hypo text-white font-semibold">
+            <button onClick={handleStop} disabled={!reason} className="w-full py-2.5 rounded-lg bg-band-hypo text-white font-semibold disabled:opacity-40">
               Mark feed stopped
             </button>
           </div>
@@ -317,8 +396,118 @@ function Toggle({ label, checked, onChange }) {
 }
 
 // ---------- Insulin ----------
+// Advisory insulin dose calculator (VRIII rate + TFD starting estimate).
+function InsulinDoseCalculator() {
+  const { activePatient } = usePatient();
+  const [cbg, setCbg] = useState("");
+  const [vriii, setVriii] = useState(null);
+  const [weight, setWeight] = useState(activePatient?.weightKg ?? "");
+  const [carbs, setCarbs] = useState("");
+  const [highRisk, setHighRisk] = useState(false);
+  const [tfd, setTfd] = useState(null);
+  const [err, setErr] = useState(null);
+
+  async function runVriii() {
+    setErr(null);
+    try { setVriii(await api.calcVriii(parseFloat(cbg))); }
+    catch { setErr("Backend not connected."); }
+  }
+  async function runTfd() {
+    setErr(null);
+    try {
+      setTfd(await api.calcTfd({
+        weightKg: parseFloat(weight),
+        highHypoRisk: highRisk,
+        feedCarbsG: carbs ? parseFloat(carbs) : null,
+      }));
+    } catch { setErr("Backend not connected."); }
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1 text-ink font-semibold">
+        <Calculator size={17} /> Dose calculator
+      </div>
+      <div className="flex items-start gap-2 text-xs rounded-lg bg-band-looming/10 text-band-looming border border-band-looming/30 px-3 py-2 mb-4">
+        <TriangleAlert size={14} className="mt-0.5 shrink-0" />
+        <span>Advisory starting estimates only — values are draft defaults pending DIT sign-off. The prescriber confirms every dose.</span>
+      </div>
+
+      {/* VRIII */}
+      <div className="mb-5">
+        <div className="text-sm font-medium text-ink mb-2">VRIII rate (from CBG)</div>
+        <div className="flex gap-2">
+          <input
+            type="number" step="0.1" value={cbg} onChange={(e) => setCbg(e.target.value)}
+            placeholder="CBG mmol/L"
+            className="flex-1 px-3 py-2 text-sm rounded-lg border border-neutral-200"
+          />
+          <button onClick={runVriii} disabled={cbg === ""}
+            className="px-4 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-40">
+            Calculate
+          </button>
+        </div>
+        {vriii && (
+          <div className="mt-2 rounded-lg border border-neutral-200 p-3 text-sm">
+            <div className="text-ink"><span className="text-2xl font-semibold">{vriii.rate}</span> {vriii.unit}</div>
+            {vriii.note && <p className="text-xs text-neutral-500 mt-1">{vriii.note}</p>}
+            <p className="text-xs text-neutral-400 mt-1">{vriii.provenance}</p>
+          </div>
+        )}
+      </div>
+
+      {/* TFD */}
+      <div>
+        <div className="text-sm font-medium text-ink mb-2">Feed-related starting dose (TFD)</div>
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
+            placeholder="Weight kg"
+            className="px-3 py-2 text-sm rounded-lg border border-neutral-200"
+          />
+          <input
+            type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)}
+            placeholder="Feed carbs g (optional)"
+            className="px-3 py-2 text-sm rounded-lg border border-neutral-200"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-neutral-700 mt-2">
+          <input type="checkbox" checked={highRisk} onChange={(e) => setHighRisk(e.target.checked)} />
+          High hypo risk (T1 / prior hypo / frail)
+        </label>
+        <button onClick={runTfd} disabled={weight === ""}
+          className="w-full mt-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-40">
+          Estimate starting dose
+        </button>
+        {tfd && (
+          <div className="mt-2 rounded-lg border border-neutral-200 p-3 text-sm space-y-1">
+            <div className="text-ink">
+              Weight-based: <span className="text-2xl font-semibold">{tfd.weight_based_units}</span> units
+              <span className="text-xs text-neutral-400"> ({tfd.units_per_kg} u/kg{tfd.capped ? ", capped" : ""})</span>
+            </div>
+            {tfd.carb_based_units != null && (
+              <div className="text-neutral-600">Carb cross-check: <strong>{tfd.carb_based_units}</strong> units</div>
+            )}
+            <ul className="text-xs text-neutral-500 list-disc list-inside pt-1">
+              {tfd.notes.map((nstr, i) => <li key={i}>{nstr}</li>)}
+            </ul>
+            <p className="text-xs text-neutral-400">{tfd.provenance}</p>
+          </div>
+        )}
+      </div>
+
+      {err && <p className="text-sm text-band-hypo mt-3">{err}</p>}
+    </Card>
+  );
+}
+
 export function InsulinTab() {
-  return <div className="max-w-md"><InsulinCard /></div>;
+  return (
+    <div className="max-w-md space-y-4">
+      <InsulinDoseCalculator />
+      <InsulinCard />
+    </div>
+  );
 }
 
 // ---------- Alerts ----------

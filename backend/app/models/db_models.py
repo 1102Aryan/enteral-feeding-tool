@@ -59,6 +59,7 @@ class Patient(SQLModel, table=True):
     on_metformin: bool = True
     feed_type: str = "continuous"
     insulin_type: str = "rapid_analogue"
+    on_vriii: bool = False  # variable-rate IV insulin infusion -> hourly CBG
     feed_status: str = "feeding"  # feeding | feed_stopped | not_feeding
     weight_kg: Optional[float] = None
     hba1c: Optional[float] = None
@@ -78,3 +79,17 @@ class Feedback(SQLModel, table=True):
     message: str
     submitted_by: Optional[str] = None
     patient_ref: Optional[str] = None
+
+class User(SQLModel, table=True):
+    ref: str = Field(default_factory=_new_ref, primary_key=True)
+    username: str = Field(index=True, unique=True)
+    name: str
+    role: str = "clinician"
+    password_hash: str  # argon2id
+    created_at: datetime = Field(default_factory=_now)
+
+class AuthToken(SQLModel, table=True):
+    """Opaque bearer token issued on login."""
+    token: str = Field(primary_key=True)
+    user_ref: str
+    created_at: datetime = Field(default_factory=_now)

@@ -1,0 +1,32 @@
+version: jbds-appendix2-v1-DRAFT
+# ADVISORY STARTING ESTIMATES ONLY. Every coefficient below is a standard
+# default and MUST be confirmed against local policy (DIT / sponsor) before
+# clinical use. The prescriber decides the dose; this tool only suggests.
+status: DRAFT_FOR_SIGN_OFF
+provenance: "JBDS 05 §6, Appendix 2; UHL B6/2020 §2.9"
+
+# Variable-rate IV insulin infusion — standard starting sliding scale.
+# Substrate (glucose) fluid runs alongside; never omit long-acting basal in T1.
+vriii:
+  unit: units/hour
+  scale:
+    - { cbg_max: 4.0,  rate: 0.0, note: "Treat hypo; continue substrate. In T1, do not stop insulin fully." }
+    - { cbg_max: 8.0,  rate: 1.0 }
+    - { cbg_max: 12.0, rate: 2.0 }
+    - { cbg_max: 16.0, rate: 3.0 }
+    - { cbg_max: 20.0, rate: 4.0 }
+    - { cbg_max: 24.0, rate: 5.0 }
+    - { cbg_max: null, rate: 6.0, note: "Persistent >24 mmol/L — seek senior / DIT review." }
+
+# Total feed dose — conservative starting estimate for feed-related insulin.
+tfd:
+  units_per_kg:
+    default: 0.3         # insulin-naive conservative start
+    high_hypo_risk: 0.2  # reduce for prior hypo / T1 / frail
+  carb_ratio_g_per_unit: 10   # secondary cross-check (1 unit : 10 g carbohydrate)
+  round_to_units: 1           # round the suggestion to the nearest N units
+  max_starting_units: 30      # safety cap on a single suggestion
+  notes:
+    - "Conservative insulin-naive starting estimate — titrate to response."
+    - "Match insulin profile to feed duration; second dose at the midpoint for feeds >=16 h."
+    - "Titrate +2-4 units or 10-20% for persistent CBG >12 (per band rules)."
