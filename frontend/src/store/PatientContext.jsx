@@ -108,8 +108,8 @@ export function PatientProvider({ children }) {
     };
   }
 
-  async function logCbg(cbg) {
-    const res = await api.evaluate({ cbg, ...ctx(), patientRef: activeRef });
+  async function logCbg(cbg, context = "during_feed") {
+    const res = await api.evaluate({ cbg, context, ...ctx(), patientRef: activeRef });
     await refresh();
     return res;
   }

@@ -48,6 +48,8 @@ function CbgEntry() {
   const [lastCbg, setLastCbg] = useState(null);
   const [ketone, setKetone] = useState("");
   const [ket, setKet] = useState(null);
+  const [context, setContext] = useState("pre_feed");
+
  
   async function submit() {
     const v = parseFloat(cbg);
@@ -56,7 +58,7 @@ function CbgEntry() {
     setKet(null);
     setKetone("");
     try {
-      const r = await logCbg(v);
+      const r = await logCbg(v, context);
       setRes(r);
       setLastCbg(v);
     } finally {
@@ -69,12 +71,42 @@ function CbgEntry() {
     setKet(await assessKetone(ketone, lastCbg));
   }
 
+  const contexts = [
+    { id: "pre_feed", label: "Pre-feed", description: "Target: 6-10" },
+    { id: "during_feed", label: "During-feed", description: "Target: 6-12" },
+    { id: "post_break", label: "Post-break", description: "Target: 6-10" },
+  ];
+
 
   return (
     <Card>
       <div className="flex items-center gap-2 mb-3 text-ink font-semibold">
         <Activity size={17} /> Log capillary glucose
       </div>
+      <div className="text-xs font-medium text-neutral-500 mb-2">Reading context</div>
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {contexts.map((ctx) => {
+          const isSelected = context === ctx.id;
+          return (
+            <button
+              key={ctx.id}
+              type="button"
+              onClick={() => setContext(ctx.id)}
+              className={`flex flex-col items-start px-3 py-2 rounded-lg border text-left ${
+                isSelected
+                  ? "bg-cream border-amber-300"
+                  : "bg-white border-neutral-200 hover:bg-neutral-50"
+              }`}
+            >
+              <span className={`text-sm font-semibold ${isSelected ? "text-ink" : "text-neutral-700"}`}>
+                {ctx.label}
+              </span>
+              <span className="text-[11px] text-neutral-400">{ctx.description}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex gap-2">
         <input
           type="number" step="0.1" inputMode="decimal" value={cbg}
@@ -97,6 +129,7 @@ function CbgEntry() {
             <span className="font-semibold">{res.band.label}</span>
             <span className="text-sm opacity-70">{res.band.range} mmol/L</span>
           </div>
+          {res.context_label && <p className="text-xs opacity-60 mt-0.5">{res.context_label} target</p>}
           <p className="mt-2 text-sm text-neutral-700">{res.recommendation}</p>
           <p className="mt-1 text-sm text-neutral-600">{res.category_guidance}</p>
           <p className="mt-2 text-xs text-neutral-400">Rule: {res.provenance}</p>
@@ -714,6 +747,7 @@ export function AuditTab() {
               <li key={e.id} className="py-2 flex justify-between gap-3 text-sm">
                 <span className="text-neutral-700">{e.summary}
                   <span className="ml-2 text-[11px] uppercase tracking-wide text-neutral-400">{e.event_type}</span>
+                  {e.actor && <span className="block text-xs text-neutral-400">by {e.actor}</span>}
                 </span>
                 <span className="text-neutral-400 whitespace-nowrap">{timeAgo(e.ts)}</span>
               </li>

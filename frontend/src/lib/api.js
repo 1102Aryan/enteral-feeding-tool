@@ -10,6 +10,9 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t) =>
   t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY);
 
+let onUnauthorized = null;
+export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
+
 async function request(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
@@ -20,6 +23,9 @@ async function request(path, options = {}) {
       ...options.headers,
     },
   });
+  if (res.status === 401 && token && !path.startsWith("/auth/login")) {
+    onUnauthorized?.();
+  }
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }

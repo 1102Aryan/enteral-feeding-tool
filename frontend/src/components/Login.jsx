@@ -3,7 +3,7 @@ import { useAuth } from "../store/AuthContext.jsx";
 import { LogIn, Lock } from "lucide-react";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -35,6 +35,12 @@ export default function Login() {
             <h1 className="text-lg font-semibold text-ink">Sign in</h1>
             <p className="text-sm text-neutral-500">Clinician access to the advisory tool.</p>
           </div>
+
+          {sessionExpired && (
+            <div className="text-sm rounded-lg bg-band-looming/10 text-band-looming border border-band-looming/30 px-3 py-2">
+              Your session has expired — please sign in again.
+            </div>
+          )}
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-neutral-500">Username</label>
@@ -75,10 +81,10 @@ export default function Login() {
             <p className="text-xs text-neutral-400 mb-2">Demo accounts (tap to fill):</p>
             <div className="grid grid-cols-2 gap-1.5">
               {[
-                ["nurse", "nurse123", "Nurse"],
-                ["doctor", "doctor123", "Doctor"],
-                ["dit", "dit123", "DIT"],
-                ["admin", "admin123", "Admin"],
+                ["nurse", "Ward-Nurse-7fK2rQx9vT", "Nurse"],
+                ["doctor", "Ward-Doctor-4mZp8TvcLb", "Doctor"],
+                ["dit", "DIT-Lead-6xB3nWqL5jHd", "DIT"],
+                ["admin", "Admin-Enteral-9tR4yHm2Kp", "Admin"],
               ].map(([u, p, label]) => (
                 <button
                   key={u}
