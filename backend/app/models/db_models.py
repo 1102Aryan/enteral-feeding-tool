@@ -35,6 +35,7 @@ class AuditEntry(SQLModel, table=True):
     summary: str
     detail: Optional[str] = None
     patient_ref: str = "demo"
+    actor: Optional[str] = None  # who performed the action (name + role)
 
 class Alert(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -101,3 +102,5 @@ class AuthToken(SQLModel, table=True):
     token: str = Field(primary_key=True)
     user_ref: str
     created_at: datetime = Field(default_factory=_now)
+    expires_at: Optional[datetime] = None
+

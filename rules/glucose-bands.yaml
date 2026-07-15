@@ -37,3 +37,23 @@ bands:
       Caution within 4 h of a feed break. If persistently >12 on two consecutive
       readings, inform the DIT.
     provenance: "UHL B6/2020 §2.9.3, Figure 1; JBDS 05 §11"
+
+# Reading context sets the target upper bound: fasting 6-10 vs feeding 6-12
+# (JBDS 05 §8.1). Hyperglycaemia / ketone check stays at >12 (JBDS 05 §11).
+contexts:
+  pre_feed:
+    label: "Pre-feed (fasting)"
+    target_upper: 10
+    target_range: "6-10"
+    above_range: "> 10"
+  during_feed:
+    label: "During feed"
+    target_upper: 12
+    target_range: "6-12"
+    above_range: "> 12"
+  post_break:
+    label: "Post-break (fasting)"
+    target_upper: 10
+    target_range: "6-10"
+    above_range: "> 10"
+ketone_threshold: 12

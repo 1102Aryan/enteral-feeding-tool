@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.models.db_models import Feedback
+from app.models.db_models import Feedback, User
 from app.models.schemas import FeedbackCreate, FeedbackOut
 from app.time_utils import iso_utc
+from app.api.auth import current_user
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
@@ -20,7 +21,11 @@ def _to_out(f: Feedback) -> FeedbackOut:
 
 
 @router.post("", response_model=FeedbackOut)
-def create_feedback(req: FeedbackCreate, session: Session = Depends(get_session)) -> FeedbackOut:
+def create_feedback(
+    req: FeedbackCreate,
+    session: Session = Depends(get_session),
+    user: User = Depends(current_user),
+) -> FeedbackOut:
     """Persist a piece of user feedback from the sidebar overlay."""
     message = req.message.strip()
     if not message:
@@ -28,7 +33,7 @@ def create_feedback(req: FeedbackCreate, session: Session = Depends(get_session)
 
     fb = Feedback(
         message=message,
-        submitted_by=req.submitted_by,
+        submitted_by=req.submitted_by or user.name,
         patient_ref=req.patient_ref,
     )
     session.add(fb)

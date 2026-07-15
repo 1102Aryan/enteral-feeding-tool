@@ -3,9 +3,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi import Depends
+
 from app.db import init_db, engine
 from sqlmodel import Session
-from app.api import recommendation, feed, alerts, ketones, patients, monitoring, feedback, auth, dosing, rules
+from app.api import recommendation, feed, alerts, ketones, patients, monitoring, feedback, auth, dosing, rules, insulin
+from app.api.auth import current_user
 from app.services.auth_service import ensure_default_user
 
 @asynccontextmanager
@@ -34,16 +37,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Every /api route requires a valid session except auth and health.
+protected = [Depends(current_user)]
+
 app.include_router(auth.router, prefix="/api")
-app.include_router(recommendation.router, prefix="/api")
-app.include_router(feed.router, prefix="/api")
-app.include_router(alerts.router, prefix="/api")
-app.include_router(ketones.router, prefix="/api")
-app.include_router(patients.router, prefix="/api")
-app.include_router(monitoring.router, prefix="/api")
-app.include_router(feedback.router, prefix="/api")
-app.include_router(dosing.router, prefix="/api")
-app.include_router(rules.router, prefix="/api")
+app.include_router(recommendation.router, prefix="/api", dependencies=protected)
+app.include_router(feed.router, prefix="/api", dependencies=protected)
+app.include_router(alerts.router, prefix="/api", dependencies=protected)
+app.include_router(ketones.router, prefix="/api", dependencies=protected)
+app.include_router(patients.router, prefix="/api", dependencies=protected)
+app.include_router(monitoring.router, prefix="/api", dependencies=protected)
+app.include_router(feedback.router, prefix="/api", dependencies=protected)
+app.include_router(dosing.router, prefix="/api", dependencies=protected)
+app.include_router(rules.router, prefix="/api", dependencies=protected)
+app.include_router(insulin.router, prefix="/api", dependencies=protected)
 
 @app.get("/api/health")
 def health():

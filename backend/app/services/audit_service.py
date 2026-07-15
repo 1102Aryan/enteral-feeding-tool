@@ -12,6 +12,7 @@ def write_audit(
     summary: str,
     detail: Optional[dict] = None,
     patient_ref: str = "demo",
+    actor: Optional[str] = None,
 ) -> AuditEntry:
     """Append a single immutable audit entry. Never updates or deletes."""
     entry = AuditEntry(
@@ -19,6 +20,7 @@ def write_audit(
         summary=summary,
         detail=json.dumps(detail) if detail is not None else None,
         patient_ref=patient_ref,
+        actor=actor,
     )
     session.add(entry)
     session.commit()

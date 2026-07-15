@@ -4,6 +4,10 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.db import get_session
+from app.api.auth import current_user
+from app.models.db_models import User
+
+_TEST_USER = User(ref="t", username="tester", name="Tester", role="admin", password_hash="")
 
 
 def _client():
@@ -17,6 +21,7 @@ def _client():
             yield s
 
     app.dependency_overrides[get_session] = override
+    app.dependency_overrides[current_user] = lambda: _TEST_USER
     return TestClient(app)
 
 

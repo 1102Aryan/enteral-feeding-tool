@@ -16,6 +16,7 @@ class EvaluateRequest(BaseModel):
     feed_type: str = Field("continuous", alias="feedType")
     insulin_type: str = Field("rapid_analogue", alias="insulinType")
     feed_running: bool = Field(True, alias="feedRunning")
+    context: str = Field("during_feed", description="pre_feed | during_feed | post_break")
     patient_ref: str = Field("demo", alias="patientRef")
 
 class Band(BaseModel):
@@ -30,6 +31,8 @@ class EvaluateResponse(BaseModel):
     provenance: str                 # Traceable rule reference
     check_ketones: bool             # True when CBG > 12
     protocol_version: str
+    context: str = "during_feed"    # reading context applied
+    context_label: str = ""         # human label for the context
 
 class FeedStopRequest(BaseModel):
     """
@@ -73,6 +76,7 @@ class KetoneRequest(BaseModel):
     ketonuria_plus: Optional[int] = Field(None, alias="ketonuriaPlus")
     cbg: Optional[float] = None
     diabetes_type: str = Field("type2", alias="diabetesType")
+    patient_ref: str = Field("demo", alias="patientRef")
 
 
 class KetoneResponse(BaseModel):
@@ -173,6 +177,14 @@ class PatientUpdate(BaseModel):
 class FeedStatusUpdate(BaseModel):
     status: str  # feeding | feed_stopped | not_feeding
     reason: Optional[str] = None  # documented hypo trigger (JBDS Table 2)
+
+
+class InsulinDoseRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    insulin_type: str = Field(..., alias="insulinType")
+    units: float
+    patient_ref: str = Field("demo", alias="patientRef")
 
 
 class VriiiRequest(BaseModel):

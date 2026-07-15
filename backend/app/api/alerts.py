@@ -8,7 +8,7 @@ from app.db import get_session
 from app.models.db_models import Alert, Patient, User
 from app.models.schemas import AlertOut
 from app.services.alerting import acknowledge_alert, escalate_alert, escalate_due_alerts, role_label
-from app.api.auth import require_permission
+from app.api.auth import require_permission, actor_label
 from app.time_utils import iso_utc
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -83,7 +83,7 @@ def ack(
     session: Session = Depends(get_session),
     user: User = Depends(require_permission("alert:acknowledge")),
 ) -> AlertOut:
-    alert = acknowledge_alert(session, alert_id, user.name)
+    alert = acknowledge_alert(session, alert_id, actor_label(user))
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return _to_out(alert)
@@ -95,7 +95,7 @@ def escalate(
     session: Session = Depends(get_session),
     user: User = Depends(require_permission("alert:escalate")),
 ) -> AlertOut:
-    alert = escalate_alert(session, alert_id, user.name)
+    alert = escalate_alert(session, alert_id, actor_label(user))
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return _to_out(alert)

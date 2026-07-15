@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.models.db_models import Patient
+from app.models.db_models import Patient, User
 from app.models.schemas import PatientCreate, PatientOut, PatientUpdate, FeedStatusUpdate
 from app.services.audit_service import write_audit
+from app.api.auth import current_user, actor_label
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
@@ -42,7 +43,11 @@ def _to_out(p: Patient) -> PatientOut:
     )
 
 @router.post("", response_model=PatientOut)
-def create_patient(body: PatientCreate, session: Session = Depends(get_session)) -> PatientOut:
+def create_patient(
+    body: PatientCreate,
+    session: Session = Depends(get_session),
+    user: User = Depends(current_user),
+) -> PatientOut:
     p = Patient(
         name=body.name,
         diabetes_type=body.diabetes_type,
@@ -63,6 +68,7 @@ def create_patient(body: PatientCreate, session: Session = Depends(get_session))
         summary=f"Patient added: {p.name}",
         detail={"ref": p.ref},
         patient_ref=p.ref,
+        actor=actor_label(user),
     )
     return _to_out(p)
 
@@ -82,7 +88,10 @@ def get_patient(ref: str, session: Session = Depends(get_session)) -> PatientOut
 
 @router.patch("/{ref}", response_model=PatientOut)
 def update_patient(
-    ref: str, body: PatientUpdate, session: Session = Depends(get_session)
+    ref: str,
+    body: PatientUpdate,
+    session: Session = Depends(get_session),
+    user: User = Depends(current_user),
 ) -> PatientOut:
     p = session.get(Patient, ref)
     if p is None:
@@ -100,13 +109,17 @@ def update_patient(
         summary=f"Patient details updated: {p.name}",
         detail={"fields": list(changes.keys())},
         patient_ref=p.ref,
+        actor=actor_label(user),
     )
     return _to_out(p)
 
 
 @router.post("/{ref}/feed-status", response_model=PatientOut)
 def set_feed_status(
-    ref: str, body: FeedStatusUpdate, session: Session = Depends(get_session)
+    ref: str,
+    body: FeedStatusUpdate,
+    session: Session = Depends(get_session),
+    user: User = Depends(current_user),
 ) -> PatientOut:
     if body.status not in FEED_STATUSES:
         raise HTTPException(status_code=422, detail=f"Invalid feed status: {body.status}")
@@ -130,5 +143,6 @@ def set_feed_status(
         summary=summary,
         detail={"status": body.status, "reason": body.reason},
         patient_ref=p.ref,
+        actor=actor_label(user),
     )
     return _to_out(p)

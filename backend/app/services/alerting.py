@@ -37,6 +37,8 @@ def raise_alert(
         event_type="alert_raised",
         summary=f"[{severity}] {message}",
         detail={"alert_id": alert.id, "event_type": event_type},
+        patient_ref=patient_ref,
+        actor="System",
     )
     return alert
 
@@ -56,6 +58,8 @@ def acknowledge_alert(session: Session, alert_id: int, by: str) -> Optional[Aler
         event_type="alert_acknowledged",
         summary=f"Acknowledged by {by}: {alert.message}",
         detail={"alert_id": alert.id, "by": by},
+        patient_ref=alert.patient_ref,
+        actor=by,
     )
     return alert
 
@@ -81,6 +85,8 @@ def escalate_alert(session: Session, alert_id: int, by: str) -> Optional[Alert]:
             event_type="alert_escalated",
             summary=f"Manually escalated to {ladder[alert.escalation_level]['label']} by {by}: {alert.message}",
             detail={"alert_id": alert.id, "level": alert.escalation_level, "by": by},
+            patient_ref=alert.patient_ref,
+            actor=by,
         )
     return alert
 
@@ -116,6 +122,8 @@ def escalate_due_alerts(session: Session, now: Optional[datetime] = None) -> lis
                 event_type="alert_escalated",
                 summary=f"Escalated to {ladder[a.escalation_level]['label']}: {a.message}",
                 detail={"alert_id": a.id, "level": a.escalation_level},
+                patient_ref=a.patient_ref,
+                actor="System (timeout)",
             )
         if changed:
             session.add(a)

@@ -23,6 +23,11 @@ def _to_out(u: User) -> UserOut:
     )
 
 
+def actor_label(user: User) -> str:
+    """Name + role for attributing an action in the audit trail."""
+    return f"{user.name} ({role_label(user.role)})"
+
+
 def require_permission(permission: str):
     """Dependency that allows the request only if the user's role grants `permission`."""
     def checker(user: User = Depends(current_user)) -> User:

@@ -69,6 +69,7 @@ def audit_log(limit: int = 50, session: Session = Depends(get_session)) -> list[
             "ts": iso_utc(r.ts),
             "event_type": r.event_type,
             "summary": r.summary,
+            "actor": r.actor,
             "detail": json.loads(r.detail) if r.detail else None,
         }
         for r in rows

@@ -2,16 +2,22 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.models.schemas import KetoneRequest, KetoneResponse
+from app.models.db_models import User
 from app.engine.ketones import assess_ketones
 from app.engine.loader import load_ruleset
 from app.db import get_session
 from app.services.audit_service import write_audit
+from app.api.auth import current_user, actor_label
 
 router = APIRouter(prefix="/ketones", tags=["ketones"])
 
 
 @router.post("/assess", response_model=KetoneResponse)
-def assess(req: KetoneRequest, session: Session = Depends(get_session)) -> KetoneResponse:
+def assess(
+    req: KetoneRequest,
+    session: Session = Depends(get_session),
+    user: User = Depends(current_user),
+) -> KetoneResponse:
     """Branch on a ketone reading (triggered when CBG > 12)."""
     result = assess_ketones(
         ketone_mmol=req.ketone_mmol, ketonuria_plus=req.ketonuria_plus
@@ -28,6 +34,8 @@ def assess(req: KetoneRequest, session: Session = Depends(get_session)) -> Keton
             "cbg": req.cbg,
             "diabetes_type": req.diabetes_type,
         },
+        patient_ref=req.patient_ref,
+        actor=actor_label(user),
     )
 
     version = load_ruleset("ketones").get("version", "unknown")

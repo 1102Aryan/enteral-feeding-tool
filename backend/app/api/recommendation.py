@@ -2,18 +2,21 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.models.schemas import EvaluateRequest, EvaluateResponse
-from app.models.db_models import GlucoseReading
+from app.models.db_models import GlucoseReading, User
 from app.engine.evaluator import evaluate
 from app.db import get_session
 from app.services.audit_service import write_audit
 from app.services.alerting import raise_alert
+from app.api.auth import current_user, actor_label
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 
 @router.post("/evaluate", response_model=EvaluateResponse)
 def evaluate_reading(
-    req: EvaluateRequest, session: Session = Depends(get_session)
+    req: EvaluateRequest,
+    session: Session = Depends(get_session),
+    user: User = Depends(current_user),
 ) -> EvaluateResponse:
     """Given a CBG + patient context, return the protocol recommendation."""
     res = evaluate(req)
@@ -28,10 +31,12 @@ def evaluate_reading(
         detail={
             "cbg": req.cbg,
             "band": res.band.key,
+            "context": req.context,
             "diabetes_type": req.diabetes_type,
             "check_ketones": res.check_ketones,
         },
         patient_ref=req.patient_ref,
+        actor=actor_label(user),
     )
 
     # Raise alerts for high-risk readings.
